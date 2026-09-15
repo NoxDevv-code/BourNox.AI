@@ -1,44 +1,438 @@
+```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>BourNox.AI - Connexion</title>
+
 <link rel="stylesheet" href="style.css">
+
+<style>
+/* ================================
+   BOURNOX.AI - PAGE DE CONNEXION
+   ================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(0, 140, 255, 0.15), transparent 35%),
+    radial-gradient(circle at 80% 80%, rgba(90, 0, 255, 0.13), transparent 35%),
+    #05070d;
+  color: #fff;
+  overflow-x: hidden;
+}
+
+/* Fond décoratif */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 45px 45px;
+  mask-image: linear-gradient(to bottom, black, transparent);
+}
+
+/* Confidentialité */
+
+.privacy-notice {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(900px, calc(100% - 30px));
+  padding: 13px 18px;
+  border: 1px solid rgba(80, 170, 255, 0.2);
+  border-radius: 14px;
+  background: rgba(8, 12, 22, 0.75);
+  backdrop-filter: blur(15px);
+  color: #aebbd0;
+  font-size: 13px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+  z-index: 10;
+}
+
+.privacy-notice strong {
+  color: #fff;
+}
+
+/* Page */
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 110px 20px 40px;
+}
+
+/* Carte */
+
+.auth-card {
+  width: min(430px, 100%);
+  padding: 34px;
+  border-radius: 25px;
+
+  background: linear-gradient(
+    145deg,
+    rgba(16, 23, 38, 0.96),
+    rgba(7, 10, 18, 0.97)
+  );
+
+  border: 1px solid rgba(100, 170, 255, 0.18);
+
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.6),
+    0 0 70px rgba(0, 110, 255, 0.08);
+
+  backdrop-filter: blur(20px);
+
+  animation: cardAppear 0.6s ease;
+}
+
+@keyframes cardAppear {
+  from {
+    opacity: 0;
+    transform: translateY(25px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Logo */
+
+.hero-logo {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 20px;
+
+  background:
+    linear-gradient(145deg, #168cff, #5c36ff);
+
+  font-size: 25px;
+  font-weight: 900;
+  letter-spacing: -1px;
+
+  box-shadow:
+    0 0 35px rgba(40, 130, 255, 0.4),
+    inset 0 1px rgba(255,255,255,0.25);
+
+  animation: logoGlow 3s ease-in-out infinite;
+}
+
+@keyframes logoGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 30px rgba(40, 130, 255, 0.3),
+      inset 0 1px rgba(255,255,255,0.25);
+  }
+
+  50% {
+    box-shadow:
+      0 0 50px rgba(40, 130, 255, 0.55),
+      inset 0 1px rgba(255,255,255,0.25);
+  }
+}
+
+/* Titre */
+
+.auth-card h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 32px;
+  letter-spacing: -1px;
+}
+
+.auth-card h1 span {
+  color: #4ca4ff;
+}
+
+.auth-subtitle {
+  margin: 8px 0 28px;
+  text-align: center;
+  color: #8190a8;
+  font-size: 14px;
+}
+
+/* Onglets */
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+
+  padding: 5px;
+  margin-bottom: 25px;
+
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 13px;
+}
+
+.auth-tabs button {
+  border: 0;
+  border-radius: 9px;
+  padding: 11px 8px;
+
+  background: transparent;
+  color: #78869c;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.auth-tabs button:hover {
+  color: #fff;
+}
+
+.auth-tabs button.active {
+  color: #fff;
+  background: rgba(54, 142, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(80, 160, 255, 0.16);
+}
+
+/* Formulaire */
+
+#authForm {
+  display: flex;
+  flex-direction: column;
+}
+
+#authForm label {
+  margin: 0 0 8px;
+  color: #d9e1ee;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#authForm input {
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 14px 15px;
+
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+
+  background: rgba(255,255,255,0.045);
+  color: #fff;
+
+  outline: none;
+  font-size: 14px;
+
+  transition: 0.2s ease;
+}
+
+#authForm input::placeholder {
+  color: #59667a;
+}
+
+#authForm input:focus {
+  border-color: rgba(66, 157, 255, 0.65);
+
+  background: rgba(60, 130, 255, 0.06);
+
+  box-shadow:
+    0 0 0 3px rgba(50, 140, 255, 0.08),
+    0 0 25px rgba(40, 130, 255, 0.08);
+}
+
+/* Bouton */
+
+.auth-submit {
+  position: relative;
+  overflow: hidden;
+
+  width: 100%;
+  padding: 14px;
+
+  border: 0;
+  border-radius: 13px;
+
+  background: linear-gradient(135deg, #168cff, #5837ff);
+
+  color: white;
+
+  font-size: 14px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 10px 30px rgba(40, 110, 255, 0.25);
+
+  transition: 0.2s ease;
+}
+
+.auth-submit:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 14px 38px rgba(40, 110, 255, 0.38);
+}
+
+.auth-submit:active {
+  transform: translateY(0);
+}
+
+/* Effet lumineux du bouton */
+
+.auth-submit::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.25),
+    transparent
+  );
+
+  transform: skewX(-20deg);
+  transition: 0.6s;
+}
+
+.auth-submit:hover::after {
+  left: 140%;
+}
+
+/* Erreur */
+
+.auth-error {
+  min-height: 18px;
+  margin: 12px 0 0;
+
+  color: #ff6b7a;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Note */
+
+.auth-note {
+  margin: 22px 0 0;
+  text-align: center;
+
+  color: #657389;
+  font-size: 12px;
+}
+
+/* Hidden */
+
+.hidden {
+  display: none !important;
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+
+  .privacy-notice {
+    top: 10px;
+    font-size: 11px;
+    padding: 10px 12px;
+  }
+
+  .auth-page {
+    padding: 100px 15px 25px;
+  }
+
+  .auth-card {
+    padding: 27px 21px;
+    border-radius: 21px;
+  }
+
+  .hero-logo {
+    width: 64px;
+    height: 64px;
+  }
+
+  .auth-card h1 {
+    font-size: 28px;
+  }
+}
+</style>
 </head>
+
 <body>
-<div class="privacy-notice">🔐 <strong>Confidentialité :</strong> certaines données du compte, notamment les conversations et mémoires enregistrées, peuvent être accessibles aux administrateurs de BourNox.AI pour la gestion, la sécurité et la modération.</div>
+
+<div class="privacy-notice">
+  🔐 <strong>Confidentialité :</strong>
+  certaines données du compte, notamment les conversations et mémoires enregistrées,
+  peuvent être accessibles aux administrateurs de BourNox.AI pour la gestion,
+  la sécurité et la modération.
+</div>
 
 <div class="auth-page">
+
   <div class="auth-card">
+
     <div class="hero-logo">BN</div>
+
     <h1>BourNox<span>.AI</span></h1>
-    <p class="auth-subtitle">Ton IA. Ton univers.</p>
+
+    <p class="auth-subtitle">
+      Ton IA. Ton univers.
+    </p>
 
     <div class="auth-tabs">
-      <button id="loginTab" class="active">Connexion</button>
-      <button id="registerTab">Créer un compte</button>
+      <button id="loginTab" class="active" type="button">
+        Connexion
+      </button>
+
+      <button id="registerTab" type="button">
+        Créer un compte
+      </button>
     </div>
 
     <form id="authForm">
-      <label>Pseudo</label>
-      <input id="username" autocomplete="username" placeholder="Ton pseudo" required>
 
-      <label>Mot de passe</label>
-      <input id="password" type="password" autocomplete="current-password" placeholder="Ton mot de passe" required>
+      <label for="username">
+        Pseudo
+      </label>
 
-      <div id="confirmWrap" class="hidden">
-        <label>Confirmer le mot de passe</label>
-        <input id="confirmPassword" type="password" autocomplete="new-password" placeholder="Retape ton mot de passe">
-      </div>
+      <input
+        id="username"
+        autocomplete="username"
+        placeholder="Ton pseudo"
+        required
+      >
 
-      <button class="auth-submit" type="submit" id="submitBtn">Se connecter</button>
-      <p id="authError" class="auth-error"></p>
-    </form>
+      <label for="password">
+        Mot de passe
+      </label>
 
-    <p class="auth-note">Aucune adresse e-mail nécessaire.</p>
-  </div>
-</div>
-<script src="auth.js"></script>
-</body>
-</html>
+      <input
+        id="password"
+        type="password"
+        autocomplete="current-password"
+        placeholder="Ton mot de passe"
+        r
+```
