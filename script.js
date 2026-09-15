@@ -6,20 +6,13 @@ const composer = document.querySelector(".composer");
 const SESSION_KEY = "bournox_session_id";
 const USER_KEY = "bournox_user_id";
 
-
-// =========================================================
-// IDENTIFIANTS
-// =========================================================
-
 let sessionId = localStorage.getItem(SESSION_KEY);
-
 if (!sessionId) {
     sessionId = crypto.randomUUID();
     localStorage.setItem(SESSION_KEY, sessionId);
 }
 
 let userId = localStorage.getItem(USER_KEY);
-
 if (!userId) {
     userId = "local-user";
     localStorage.setItem(USER_KEY, userId);
@@ -27,39 +20,30 @@ if (!userId) {
 
 
 // =========================================================
-// ENVOI NORMAL
+// CHAT
 // =========================================================
 
 send.addEventListener("click", envoyer);
 
 input.addEventListener("keydown", (event) => {
-
     if (event.key === "Enter" && !event.shiftKey) {
-
         event.preventDefault();
-
         envoyer();
     }
 });
 
 
 function ajouterMessageUser(message) {
-
     const el = document.createElement("div");
 
     el.className = "message user";
-
     el.textContent = message;
 
-    chat.insertBefore(
-        el,
-        composer
-    );
+    chat.insertBefore(el, composer);
 }
 
 
 function ajouterMessageBot(message) {
-
     const el = document.createElement("div");
 
     el.className = "message bot";
@@ -80,34 +64,24 @@ function ajouterMessageBot(message) {
     el.appendChild(title);
     el.appendChild(body);
 
-    chat.insertBefore(
-        el,
-        composer
-    );
+    chat.insertBefore(el, composer);
 }
 
 
 function ajouterChargement() {
-
     const el = document.createElement("div");
 
-    el.className =
-        "message bot bournox-loading";
+    el.className = "message bot bournox-loading";
 
     el.innerHTML = `
         <div class="bot-title">
             <span class="mini-bn">BN</span>
-            BourNox.AI
-            <i>● réfléchit...</i>
+            BourNox.AI <i>● réfléchit...</i>
         </div>
-
         🧠 Je réfléchis...
     `;
 
-    chat.insertBefore(
-        el,
-        composer
-    );
+    chat.insertBefore(el, composer);
 
     return el;
 }
@@ -115,51 +89,40 @@ function ajouterChargement() {
 
 async function envoyer(messageForce = null) {
 
-    const message =
-        messageForce ||
-        input.value.trim();
+    const message = messageForce || input.value.trim();
 
     if (!message || send.disabled) {
         return;
     }
 
     input.value = "";
-
     send.disabled = true;
 
     ajouterMessageUser(message);
 
-    const loading =
-        ajouterChargement();
+    const loading = ajouterChargement();
 
     try {
 
-        const response =
-            await fetch(
-                "/chat",
-                {
-                    method: "POST",
+        const response = await fetch("/chat", {
+            method: "POST",
 
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
+            headers: {
+                "Content-Type": "application/json"
+            },
 
-                    body: JSON.stringify({
-                        message: message,
-                        session_id: sessionId,
-                        user_id: userId
-                    })
-                }
-            );
+            body: JSON.stringify({
+                message: message,
+                session_id: sessionId,
+                user_id: userId
+            })
+        });
 
         let data = {};
 
         try {
             data = await response.json();
-        }
-
-        catch {
+        } catch {
             data = {};
         }
 
@@ -169,7 +132,7 @@ async function envoyer(messageForce = null) {
 
             ajouterMessageBot(
                 data.response ||
-                `Erreur du serveur (${response.status}).`
+                `⚠️ Erreur du serveur (${response.status}).`
             );
 
             return;
@@ -177,8 +140,7 @@ async function envoyer(messageForce = null) {
 
         if (data.session_id) {
 
-            sessionId =
-                data.session_id;
+            sessionId = data.session_id;
 
             localStorage.setItem(
                 SESSION_KEY,
@@ -191,9 +153,7 @@ async function envoyer(messageForce = null) {
             "Je n'ai pas reçu de réponse."
         );
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(
             "Erreur BourNox :",
@@ -206,9 +166,7 @@ async function envoyer(messageForce = null) {
             "⚠️ Impossible de contacter le cerveau BourNox."
         );
 
-    }
-
-    finally {
+    } finally {
 
         send.disabled = false;
 
@@ -218,50 +176,177 @@ async function envoyer(messageForce = null) {
 
 
 // =========================================================
+// PANNEAU DE CRÉATION D'IMAGE
+// =========================================================
+
+function ouvrirCreateurImage() {
+
+    // Évite d'avoir plusieurs panneaux
+    const ancien =
+        document.getElementById("image-creator");
+
+    if (ancien) {
+        ancien.remove();
+    }
+
+
+    const el = document.createElement("div");
+
+    el.id = "image-creator";
+
+    el.className = "message bot";
+
+    el.innerHTML = `
+        <div class="bot-title">
+            <span class="mini-bn">BN</span>
+            BourNox.AI
+            <i>● Générateur d'image</i>
+        </div>
+
+        <div style="margin-top:10px;">
+            🎨 <strong>Décris l'image que tu veux créer :</strong>
+        </div>
+
+        <textarea
+            id="image-prompt"
+            placeholder="Exemple : un robot BN dans une ville futuriste, la nuit..."
+            style="
+                width:100%;
+                min-height:90px;
+                margin-top:10px;
+                padding:12px;
+                border-radius:12px;
+                border:1px solid rgba(255,255,255,0.15);
+                background:rgba(255,255,255,0.05);
+                color:white;
+                resize:vertical;
+                box-sizing:border-box;
+                font-family:inherit;
+            "
+        ></textarea>
+
+        <div style="
+            display:flex;
+            gap:8px;
+            margin-top:10px;
+        ">
+
+            <button
+                id="create-image-btn"
+                style="
+                    padding:10px 16px;
+                    border:none;
+                    border-radius:10px;
+                    cursor:pointer;
+                    font-weight:bold;
+                "
+            >
+                🎨 Créer l'image
+            </button>
+
+            <button
+                id="cancel-image-btn"
+                style="
+                    padding:10px 16px;
+                    border:none;
+                    border-radius:10px;
+                    cursor:pointer;
+                "
+            >
+                Annuler
+            </button>
+
+        </div>
+    `;
+
+    chat.insertBefore(el, composer);
+
+
+    const promptInput =
+        document.getElementById("image-prompt");
+
+    const createButton =
+        document.getElementById("create-image-btn");
+
+    const cancelButton =
+        document.getElementById("cancel-image-btn");
+
+
+    createButton.addEventListener(
+        "click",
+        () => {
+
+            const prompt =
+                promptInput.value.trim();
+
+            if (!prompt) {
+
+                promptInput.focus();
+
+                return;
+            }
+
+            el.remove();
+
+            genererImage(prompt);
+        }
+    );
+
+
+    cancelButton.addEventListener(
+        "click",
+        () => {
+            el.remove();
+        }
+    );
+
+
+    promptInput.focus();
+}
+
+
+// =========================================================
 // GÉNÉRATION D'IMAGE
 // =========================================================
 
 async function genererImage(prompt) {
 
-    if (!prompt) {
-
-        ajouterMessageBot(
-            "🎨 Décris-moi l'image que tu veux créer."
-        );
-
-        return;
-    }
-
     ajouterMessageUser(
         "🖼️ Crée cette image : " + prompt
     );
 
-    const loading =
-        ajouterChargement();
+    const loading = ajouterChargement();
 
     try {
 
-        const response =
-            await fetch(
-                "/generate-image",
-                {
-                    method: "POST",
+        const response = await fetch(
+            "/generate-image",
+            {
+                method: "POST",
 
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
 
-                    body: JSON.stringify({
-                        prompt: prompt
-                    })
-                }
-            );
+                body: JSON.stringify({
+                    prompt: prompt
+                })
+            }
+        );
 
-        const data =
-            await response.json();
+
+        let data = {};
+
+        try {
+            data = await response.json();
+        } catch {
+            data = {};
+        }
+
 
         loading.remove();
+
 
         if (!response.ok) {
 
@@ -276,13 +361,20 @@ async function genererImage(prompt) {
             return;
         }
 
-        afficherImage(
-            data.image
-        );
 
-    }
+        if (!data.image) {
 
-    catch (error) {
+            ajouterMessageBot(
+                "⚠️ BourNox n'a reçu aucune image."
+            );
+
+            return;
+        }
+
+
+        afficherImage(data.image);
+
+    } catch (error) {
 
         console.error(
             "Erreur génération image :",
@@ -298,23 +390,20 @@ async function genererImage(prompt) {
 }
 
 
+// =========================================================
+// AFFICHER IMAGE
+// =========================================================
+
 function afficherImage(imageBase64) {
 
-    const el =
-        document.createElement(
-            "div"
-        );
+    const el = document.createElement("div");
 
-    el.className =
-        "message bot";
+    el.className = "message bot";
 
-    const title =
-        document.createElement(
-            "div"
-        );
 
-    title.className =
-        "bot-title";
+    const title = document.createElement("div");
+
+    title.className = "bot-title";
 
     title.innerHTML = `
         <span class="mini-bn">BN</span>
@@ -322,10 +411,8 @@ function afficherImage(imageBase64) {
         <i>● Image créée</i>
     `;
 
-    const image =
-        document.createElement(
-            "img"
-        );
+
+    const image = document.createElement("img");
 
     image.src =
         "data:image/png;base64," +
@@ -334,21 +421,17 @@ function afficherImage(imageBase64) {
     image.alt =
         "Image générée par BourNox.AI";
 
-    image.style.maxWidth =
-        "100%";
 
-    image.style.borderRadius =
-        "16px";
+    image.style.maxWidth = "100%";
+    image.style.borderRadius = "16px";
+    image.style.marginTop = "10px";
+    image.style.display = "block";
 
-    image.style.marginTop =
-        "10px";
-
-    image.style.display =
-        "block";
 
     el.appendChild(title);
 
     el.appendChild(image);
+
 
     chat.insertBefore(
         el,
@@ -373,45 +456,26 @@ document
                     button.textContent
                     .toLowerCase();
 
-                if (
-                    texte.includes(
-                        "devoirs"
-                    )
-                ) {
+
+                if (texte.includes("devoirs")) {
 
                     envoyer(
                         "Aide-moi à faire mes devoirs."
                     );
                 }
 
-                else if (
-                    texte.includes(
-                        "internet"
-                    )
-                ) {
+
+                else if (texte.includes("internet")) {
 
                     envoyer(
                         "Utilise Internet pour répondre à ma demande."
                     );
                 }
 
-                else if (
-                    texte.includes(
-                        "image"
-                    )
-                ) {
 
-                    const prompt =
-                        window.prompt(
-                            "🎨 Décris l'image que tu veux créer :"
-                        );
+                else if (texte.includes("image")) {
 
-                    if (prompt) {
-
-                        genererImage(
-                            prompt
-                        );
-                    }
+                    ouvrirCreateurImage();
                 }
             }
         );
@@ -423,9 +487,7 @@ document
 // =========================================================
 
 document
-    .querySelectorAll(
-        ".sidebar nav button"
-    )
+    .querySelectorAll(".sidebar nav button")
     .forEach((button) => {
 
         button.addEventListener(
@@ -438,36 +500,31 @@ document
                     )
                     .forEach(
                         (btn) =>
-                            btn.classList
-                            .remove(
+                            btn.classList.remove(
                                 "active"
                             )
                     );
 
-                button.classList.add(
-                    "active"
-                );
+
+                button.classList.add("active");
+
 
                 const texte =
                     button.textContent
                     .toLowerCase();
 
+
                 if (
-                    texte.includes(
-                        "accueil"
-                    ) ||
-                    texte.includes(
-                        "chat"
-                    )
+                    texte.includes("accueil") ||
+                    texte.includes("chat")
                 ) {
 
                     input.focus();
                 }
 
+
                 else if (
-                    texte.includes(
-                        "mémoire"
-                    )
+                    texte.includes("mémoire")
                 ) {
 
                     envoyer(
@@ -475,10 +532,9 @@ document
                     );
                 }
 
+
                 else if (
-                    texte.includes(
-                        "outils"
-                    )
+                    texte.includes("outils")
                 ) {
 
                     ajouterMessageBot(
@@ -486,10 +542,9 @@ document
                     );
                 }
 
+
                 else if (
-                    texte.includes(
-                        "internet"
-                    )
+                    texte.includes("internet")
                 ) {
 
                     envoyer(
@@ -497,10 +552,9 @@ document
                     );
                 }
 
+
                 else if (
-                    texte.includes(
-                        "voix"
-                    )
+                    texte.includes("voix")
                 ) {
 
                     ajouterMessageBot(
@@ -508,16 +562,16 @@ document
                     );
                 }
 
+
                 else if (
-                    texte.includes(
-                        "paramètres"
-                    )
+                    texte.includes("paramètres")
                 ) {
 
                     ajouterMessageBot(
                         "⚙️ Les paramètres BourNox arrivent bientôt."
                     );
                 }
+
             }
         );
     });
@@ -541,57 +595,36 @@ document
                     button.textContent
                     .toLowerCase();
 
-                if (
-                    texte.includes(
-                        "devoirs"
-                    )
-                ) {
+
+                if (texte.includes("devoirs")) {
 
                     envoyer(
                         "Aide-moi avec mes devoirs."
                     );
                 }
 
-                else if (
-                    texte.includes(
-                        "internet"
-                    )
-                ) {
+
+                else if (texte.includes("internet")) {
 
                     envoyer(
                         "Utilise Internet pour répondre à ma demande."
                     );
                 }
 
-                else if (
-                    texte.includes(
-                        "images"
-                    )
-                ) {
 
-                    const prompt =
-                        window.prompt(
-                            "🎨 Décris l'image que tu veux créer :"
-                        );
+                else if (texte.includes("images")) {
 
-                    if (prompt) {
-
-                        genererImage(
-                            prompt
-                        );
-                    }
+                    ouvrirCreateurImage();
                 }
 
-                else if (
-                    texte.includes(
-                        "voix"
-                    )
-                ) {
+
+                else if (texte.includes("voix")) {
 
                     ajouterMessageBot(
                         "🎙️ Le mode vocal BourNox arrive bientôt."
                     );
                 }
+
             }
         );
     });
