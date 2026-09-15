@@ -10,10 +10,6 @@
 <link rel="stylesheet" href="style.css">
 
 <style>
-/* ================================
-   BOURNOX.AI - PAGE DE CONNEXION
-   ================================ */
-
 * {
   box-sizing: border-box;
 }
@@ -22,82 +18,130 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: Arial, Helvetica, sans-serif;
+  color: white;
   background:
-    radial-gradient(circle at 20% 20%, rgba(0, 140, 255, 0.15), transparent 35%),
-    radial-gradient(circle at 80% 80%, rgba(90, 0, 255, 0.13), transparent 35%),
+    radial-gradient(circle at 15% 20%, rgba(0, 140, 255, 0.16), transparent 32%),
+    radial-gradient(circle at 85% 80%, rgba(105, 40, 255, 0.14), transparent 35%),
     #05070d;
-  color: #fff;
   overflow-x: hidden;
 }
 
-/* Fond décoratif */
+/* Grille futuriste */
 
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
+
   background-image:
     linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+
   background-size: 45px 45px;
-  mask-image: linear-gradient(to bottom, black, transparent);
+
+  mask-image: linear-gradient(
+    to bottom,
+    black,
+    transparent
+  );
+}
+
+/* Lumières */
+
+body::after {
+  content: "";
+  position: fixed;
+  width: 500px;
+  height: 500px;
+
+  top: 50%;
+  left: 50%;
+
+  transform: translate(-50%, -50%);
+
+  background: rgba(30, 120, 255, 0.07);
+  filter: blur(100px);
+
+  pointer-events: none;
 }
 
 /* Confidentialité */
 
 .privacy-notice {
   position: fixed;
+
   top: 18px;
   left: 50%;
+
   transform: translateX(-50%);
+
   width: min(900px, calc(100% - 30px));
+
   padding: 13px 18px;
-  border: 1px solid rgba(80, 170, 255, 0.2);
+
   border-radius: 14px;
-  background: rgba(8, 12, 22, 0.75);
-  backdrop-filter: blur(15px);
+
+  border: 1px solid rgba(90, 170, 255, 0.18);
+
+  background: rgba(8, 12, 22, 0.72);
+
+  backdrop-filter: blur(18px);
+
   color: #aebbd0;
-  font-size: 13px;
+
+  font-size: 12px;
+  line-height: 1.5;
+
   text-align: center;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
-  z-index: 10;
+
+  box-shadow:
+    0 15px 45px rgba(0,0,0,0.25);
+
+  z-index: 20;
 }
 
 .privacy-notice strong {
-  color: #fff;
+  color: white;
 }
 
 /* Page */
 
 .auth-page {
   min-height: 100vh;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 110px 20px 40px;
+
+  padding: 115px 20px 40px;
 }
 
 /* Carte */
 
 .auth-card {
-  width: min(430px, 100%);
-  padding: 34px;
-  border-radius: 25px;
+  position: relative;
 
-  background: linear-gradient(
-    145deg,
-    rgba(16, 23, 38, 0.96),
-    rgba(7, 10, 18, 0.97)
-  );
+  width: min(440px, 100%);
 
-  border: 1px solid rgba(100, 170, 255, 0.18);
+  padding: 36px;
+
+  border-radius: 26px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(17, 25, 42, 0.96),
+      rgba(7, 10, 18, 0.98)
+    );
+
+  border: 1px solid rgba(100, 170, 255, 0.17);
 
   box-shadow:
-    0 30px 90px rgba(0, 0, 0, 0.6),
-    0 0 70px rgba(0, 110, 255, 0.08);
+    0 35px 100px rgba(0,0,0,0.65),
+    0 0 70px rgba(0,110,255,0.08);
 
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(25px);
 
   animation: cardAppear 0.6s ease;
 }
@@ -114,43 +158,72 @@ body::before {
   }
 }
 
+/* Petite ligne lumineuse */
+
+.auth-card::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 15%;
+
+  width: 70%;
+  height: 1px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #318fff,
+    transparent
+  );
+
+  box-shadow: 0 0 15px #318fff;
+}
+
 /* Logo */
 
 .hero-logo {
-  width: 72px;
-  height: 72px;
+  width: 76px;
+  height: 76px;
+
   margin: 0 auto 18px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  border-radius: 20px;
+  border-radius: 21px;
 
   background:
-    linear-gradient(145deg, #168cff, #5c36ff);
+    linear-gradient(
+      145deg,
+      #168cff,
+      #5b35ff
+    );
 
   font-size: 25px;
   font-weight: 900;
+
   letter-spacing: -1px;
 
   box-shadow:
-    0 0 35px rgba(40, 130, 255, 0.4),
-    inset 0 1px rgba(255,255,255,0.25);
+    0 0 35px rgba(35,135,255,0.4),
+    inset 0 1px rgba(255,255,255,0.3);
 
-  animation: logoGlow 3s ease-in-out infinite;
+  animation: logoGlow 3s infinite ease-in-out;
 }
 
 @keyframes logoGlow {
   0%, 100% {
     box-shadow:
-      0 0 30px rgba(40, 130, 255, 0.3),
+      0 0 30px rgba(35,135,255,0.3),
       inset 0 1px rgba(255,255,255,0.25);
   }
 
   50% {
     box-shadow:
-      0 0 50px rgba(40, 130, 255, 0.55),
+      0 0 55px rgba(35,135,255,0.55),
       inset 0 1px rgba(255,255,255,0.25);
   }
 }
@@ -159,9 +232,12 @@ body::before {
 
 .auth-card h1 {
   margin: 0;
+
   text-align: center;
-  font-size: 32px;
-  letter-spacing: -1px;
+
+  font-size: 33px;
+
+  letter-spacing: -1.3px;
 }
 
 .auth-card h1 span {
@@ -170,8 +246,11 @@ body::before {
 
 .auth-subtitle {
   margin: 8px 0 28px;
+
   text-align: center;
-  color: #8190a8;
+
+  color: #7f8da5;
+
   font-size: 14px;
 }
 
@@ -179,40 +258,51 @@ body::before {
 
 .auth-tabs {
   display: grid;
+
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+
+  gap: 5px;
 
   padding: 5px;
+
   margin-bottom: 25px;
 
+  border-radius: 14px;
+
   background: rgba(255,255,255,0.035);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 13px;
+
+  border: 1px solid rgba(255,255,255,0.055);
 }
 
 .auth-tabs button {
-  border: 0;
-  border-radius: 9px;
   padding: 11px 8px;
 
+  border: 0;
+  border-radius: 10px;
+
   background: transparent;
-  color: #78869c;
+
+  color: #748198;
 
   font-size: 13px;
   font-weight: 700;
 
   cursor: pointer;
+
   transition: 0.2s ease;
 }
 
 .auth-tabs button:hover {
-  color: #fff;
+  color: white;
 }
 
 .auth-tabs button.active {
-  color: #fff;
-  background: rgba(54, 142, 255, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(80, 160, 255, 0.16);
+  color: white;
+
+  background: rgba(50,140,255,0.16);
+
+  box-shadow:
+    inset 0 0 0 1px rgba(70,155,255,0.15);
 }
 
 /* Formulaire */
@@ -223,24 +313,31 @@ body::before {
 }
 
 #authForm label {
-  margin: 0 0 8px;
-  color: #d9e1ee;
+  margin-bottom: 8px;
+
+  color: #dce4f1;
+
   font-size: 13px;
   font-weight: 700;
 }
 
+/* Inputs */
+
 #authForm input {
   width: 100%;
-  margin-bottom: 18px;
+
   padding: 14px 15px;
 
-  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 12px;
 
-  background: rgba(255,255,255,0.045);
-  color: #fff;
+  border: 1px solid rgba(255,255,255,0.08);
 
   outline: none;
+
+  background: rgba(255,255,255,0.045);
+
+  color: white;
+
   font-size: 14px;
 
   transition: 0.2s ease;
@@ -251,28 +348,94 @@ body::before {
 }
 
 #authForm input:focus {
-  border-color: rgba(66, 157, 255, 0.65);
+  border-color: rgba(65,155,255,0.7);
 
-  background: rgba(60, 130, 255, 0.06);
+  background: rgba(50,130,255,0.06);
 
   box-shadow:
-    0 0 0 3px rgba(50, 140, 255, 0.08),
-    0 0 25px rgba(40, 130, 255, 0.08);
+    0 0 0 3px rgba(50,140,255,0.08),
+    0 0 25px rgba(40,130,255,0.08);
 }
 
-/* Bouton */
+/* Champ mot de passe */
+
+.password-field {
+  position: relative;
+
+  width: 100%;
+
+  margin-bottom: 18px;
+}
+
+.password-field input {
+  margin-bottom: 0 !important;
+
+  padding-right: 52px !important;
+}
+
+/* Bouton oeil */
+
+.password-toggle {
+  position: absolute;
+
+  right: 9px;
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  width: 37px;
+  height: 37px;
+
+  border: 0;
+  border-radius: 9px;
+
+  background: transparent;
+
+  color: #7e8da3;
+
+  font-size: 17px;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.password-toggle:hover {
+  background: rgba(60,145,255,0.1);
+
+  color: white;
+}
+
+/* Confirmation */
+
+#confirmWrap {
+  margin-top: 0;
+}
+
+#confirmWrap input {
+  margin-bottom: 18px;
+}
+
+/* Bouton connexion */
 
 .auth-submit {
   position: relative;
+
   overflow: hidden;
 
   width: 100%;
+
   padding: 14px;
 
   border: 0;
   border-radius: 13px;
 
-  background: linear-gradient(135deg, #168cff, #5837ff);
+  background:
+    linear-gradient(
+      135deg,
+      #168cff,
+      #5937ff
+    );
 
   color: white;
 
@@ -282,7 +445,7 @@ body::before {
   cursor: pointer;
 
   box-shadow:
-    0 10px 30px rgba(40, 110, 255, 0.25);
+    0 10px 30px rgba(40,110,255,0.25);
 
   transition: 0.2s ease;
 }
@@ -291,31 +454,36 @@ body::before {
   transform: translateY(-2px);
 
   box-shadow:
-    0 14px 38px rgba(40, 110, 255, 0.38);
+    0 15px 40px rgba(40,110,255,0.4);
 }
 
 .auth-submit:active {
   transform: translateY(0);
 }
 
-/* Effet lumineux du bouton */
+/* Animation bouton */
 
 .auth-submit::after {
   content: "";
+
   position: absolute;
+
   top: 0;
   left: -100%;
+
   width: 60%;
   height: 100%;
 
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255,255,255,0.25),
-    transparent
-  );
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255,255,255,0.25),
+      transparent
+    );
 
   transform: skewX(-20deg);
+
   transition: 0.6s;
 }
 
@@ -327,21 +495,44 @@ body::before {
 
 .auth-error {
   min-height: 18px;
+
   margin: 12px 0 0;
 
-  color: #ff6b7a;
+  color: #ff6878;
+
   font-size: 13px;
+
   text-align: center;
 }
 
 /* Note */
 
 .auth-note {
-  margin: 22px 0 0;
+  margin: 20px 0 0;
+
+  color: #647289;
+
+  font-size: 12px;
+
+  text-align: center;
+}
+
+/* Créateur */
+
+.creator {
+  margin-top: 16px;
+
   text-align: center;
 
-  color: #657389;
+  color: #59677c;
+
   font-size: 12px;
+}
+
+.creator strong {
+  color: #4ca4ff;
+
+  font-weight: 800;
 }
 
 /* Hidden */
@@ -356,8 +547,12 @@ body::before {
 
   .privacy-notice {
     top: 10px;
-    font-size: 11px;
+
+    width: calc(100% - 20px);
+
     padding: 10px 12px;
+
+    font-size: 11px;
   }
 
   .auth-page {
@@ -365,13 +560,16 @@ body::before {
   }
 
   .auth-card {
-    padding: 27px 21px;
-    border-radius: 21px;
+    padding: 28px 21px;
+
+    border-radius: 22px;
   }
 
   .hero-logo {
-    width: 64px;
-    height: 64px;
+    width: 65px;
+    height: 65px;
+
+    font-size: 22px;
   }
 
   .auth-card h1 {
@@ -383,36 +581,70 @@ body::before {
 
 <body>
 
+<!-- =========================
+     CONFIDENTIALITÉ
+========================= -->
+
 <div class="privacy-notice">
   🔐 <strong>Confidentialité :</strong>
-  certaines données du compte, notamment les conversations et mémoires enregistrées,
-  peuvent être accessibles aux administrateurs de BourNox.AI pour la gestion,
-  la sécurité et la modération.
+  certaines données du compte, notamment les conversations et mémoires
+  enregistrées, peuvent être accessibles aux administrateurs de
+  BourNox.AI pour la gestion, la sécurité et la modération.
 </div>
+
+
+<!-- =========================
+     CONNEXION
+========================= -->
 
 <div class="auth-page">
 
   <div class="auth-card">
 
-    <div class="hero-logo">BN</div>
+    <!-- Logo -->
 
-    <h1>BourNox<span>.AI</span></h1>
+    <div class="hero-logo">
+      BN
+    </div>
+
+    <!-- Nom -->
+
+    <h1>
+      BourNox<span>.AI</span>
+    </h1>
 
     <p class="auth-subtitle">
       Ton IA. Ton univers.
     </p>
 
+
+    <!-- Onglets -->
+
     <div class="auth-tabs">
-      <button id="loginTab" class="active" type="button">
+
+      <button
+        id="loginTab"
+        class="active"
+        type="button"
+      >
         Connexion
       </button>
 
-      <button id="registerTab" type="button">
+      <button
+        id="registerTab"
+        type="button"
+      >
         Créer un compte
       </button>
+
     </div>
 
+
+    <!-- Formulaire -->
+
     <form id="authForm">
+
+      <!-- Pseudo -->
 
       <label for="username">
         Pseudo
@@ -425,14 +657,162 @@ body::before {
         required
       >
 
+
+      <!-- Mot de passe -->
+
       <label for="password">
         Mot de passe
       </label>
 
-      <input
-        id="password"
-        type="password"
-        autocomplete="current-password"
-        placeholder="Ton mot de passe"
-        r
+      <div class="password-field">
+
+        <input
+          id="password"
+          type="password"
+          autocomplete="current-password"
+          placeholder="Ton mot de passe"
+          required
+        >
+
+        <button
+          type="button"
+          id="togglePassword"
+          class="password-toggle"
+          aria-label="Afficher le mot de passe"
+        >
+          👁️
+        </button>
+
+      </div>
+
+
+      <!-- Confirmation -->
+
+      <div id="confirmWrap" class="hidden">
+
+        <label for="confirmPassword">
+          Confirmer le mot de passe
+        </label>
+
+        <div class="password-field">
+
+          <input
+            id="confirmPassword"
+            type="password"
+            autocomplete="new-password"
+            placeholder="Retape ton mot de passe"
+          >
+
+          <button
+            type="button"
+            id="toggleConfirmPassword"
+            class="password-toggle"
+            aria-label="Afficher le mot de passe"
+          >
+            👁️
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- Bouton -->
+
+      <button
+        class="auth-submit"
+        type="submit"
+        id="submitBtn"
+      >
+        Se connecter
+      </button>
+
+
+      <!-- Erreur -->
+
+      <p
+        id="authError"
+        class="auth-error"
+      ></p>
+
+    </form>
+
+
+    <!-- Informations -->
+
+    <p class="auth-note">
+      🔒 Aucune adresse e-mail nécessaire.
+    </p>
+
+    <div class="creator">
+      Créé avec ❤️ par <strong>Nox</strong>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =========================
+     AFFICHER / MASQUER MDPS
+========================= -->
+
+<script>
+
+function setupPasswordToggle(inputId, buttonId) {
+
+  const input = document.getElementById(inputId);
+  const button = document.getElementById(buttonId);
+
+  if (!input || !button) return;
+
+  button.addEventListener("click", () => {
+
+    if (input.type === "password") {
+
+      input.type = "text";
+
+      button.textContent = "🙈";
+
+      button.setAttribute(
+        "aria-label",
+        "Masquer le mot de passe"
+      );
+
+    } else {
+
+      input.type = "password";
+
+      button.textContent = "👁️";
+
+      button.setAttribute(
+        "aria-label",
+        "Afficher le mot de passe"
+      );
+
+    }
+
+  });
+
+}
+
+setupPasswordToggle(
+  "password",
+  "togglePassword"
+);
+
+setupPasswordToggle(
+  "confirmPassword",
+  "toggleConfirmPassword"
+);
+
+</script>
+
+
+<!-- Script de connexion existant -->
+
+<script src="auth.js"></script>
+
+</body>
+</html>
 ```
