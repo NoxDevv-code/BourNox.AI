@@ -1,20 +1,158 @@
 // ======================================================
-// BourNox.AI V2
+// BourNox.AI V2.0
 // Script principal
+// ======================================================
+
+"use strict";
+
+
+// ======================================================
+// DOM
 // ======================================================
 
 const input = document.getElementById("msg");
 const send = document.getElementById("send");
-const chat = document.querySelector(".chat");
-const composer = document.querySelector(".composer");
+const chatArea = document.getElementById("chat-area");
 
 const SESSION_KEY = "bournox_session_id";
+const SETTINGS_KEY = "bournox_settings";
+const THEME_KEY = "bournox_theme";
+
+
+// ======================================================
+// SESSION
+// ======================================================
 
 let sessionId = localStorage.getItem(SESSION_KEY);
 
 if (!sessionId) {
     sessionId = crypto.randomUUID();
-    localStorage.setItem(SESSION_KEY, sessionId);
+
+    localStorage.setItem(
+        SESSION_KEY,
+        sessionId
+    );
+}
+
+
+// ======================================================
+// PARAMÈTRES
+// ======================================================
+
+const defaultSettings = {
+    mode: "normal",
+    response_style: "court",
+    personality: "cool",
+    autoRead: true
+};
+
+let settings = {
+    ...defaultSettings
+};
+
+
+try {
+
+    const saved =
+        JSON.parse(
+            localStorage.getItem(SETTINGS_KEY)
+        );
+
+    if (saved) {
+        settings = {
+            ...defaultSettings,
+            ...saved
+        };
+    }
+
+} catch {
+    settings = {
+        ...defaultSettings
+    };
+}
+
+
+// ======================================================
+// UTILITAIRES
+// ======================================================
+
+function $(selector) {
+    return document.querySelector(selector);
+}
+
+
+function $$(selector) {
+    return document.querySelectorAll(selector);
+}
+
+
+function escapeHTML(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        String(text ?? "");
+
+    return div.innerHTML;
+}
+
+
+function afficherNotification(message) {
+
+    const container =
+        document.getElementById(
+            "toast-container"
+        );
+
+    if (!container) return;
+
+    const toast =
+        document.createElement("div");
+
+    toast.className =
+        "toast";
+
+    toast.textContent =
+        message;
+
+    container.appendChild(
+        toast
+    );
+
+    setTimeout(() => {
+
+        toast.style.opacity = "0";
+
+        toast.style.transform =
+            "translateY(8px)";
+
+        setTimeout(
+            () => toast.remove(),
+            200
+        );
+
+    }, 3000);
+}
+
+
+function scrollChat() {
+
+    if (!chatArea) return;
+
+    chatArea.scrollTop =
+        chatArea.scrollHeight;
+}
+
+
+function fermerModal(id) {
+
+    const modal =
+        document.getElementById(id);
+
+    if (modal) {
+        modal.classList.remove("open");
+    }
 }
 
 
@@ -23,35 +161,103 @@ if (!sessionId) {
 // ======================================================
 
 async function chargerCompte() {
+
     try {
-        const response = await fetch("/api/me");
+
+        const response =
+            await fetch("/api/me");
 
         if (!response.ok) {
-            window.location.href = "/login";
+
+            window.location.href =
+                "/login";
+
             return null;
         }
 
-        return await response.json();
+        const data =
+            await response.json();
+
+        if (data.user) {
+
+            const username =
+                data.user.username ||
+                "Utilisateur";
+
+            const avatar =
+                username
+                    .slice(0, 2)
+                    .toUpperCase();
+
+            const topAvatar =
+                document.querySelector(
+                    ".avatar"
+                );
+
+            const topUsername =
+                document.getElementById(
+                    "username-top"
+                );
+
+            const settingsUsername =
+                document.getElementById(
+                    "settings-username"
+                );
+
+            const settingsAvatar =
+                document.getElementById(
+                    "settings-avatar"
+                );
+
+            const publicId =
+                document.getElementById(
+                    "settings-public-id"
+                );
+
+            if (topAvatar) {
+                topAvatar.textContent =
+                    avatar;
+            }
+
+            if (topUsername) {
+                topUsername.textContent =
+                    username;
+            }
+
+            if (settingsUsername) {
+                settingsUsername.textContent =
+                    username;
+            }
+
+            if (settingsAvatar) {
+                settingsAvatar.textContent =
+                    avatar;
+            }
+
+            if (publicId) {
+
+                publicId.textContent =
+                    data.user.public_id
+                        ? `ID : ${data.user.public_id}`
+                        : "ID BourNox";
+            }
+        }
+
+        return data;
 
     } catch (error) {
-        console.error("Erreur compte :", error);
+
+        console.error(
+            "Erreur compte :",
+            error
+        );
+
         return null;
     }
 }
 
 
-chargerCompte().then(data => {
-
-    if (!data?.user) return;
-
-    const avatar = document.querySelector(".avatar");
-
-    if (avatar) {
-        avatar.textContent = data.user.username
-            .slice(0, 2)
-            .toUpperCase();
-    }
-});
+chargerCompte();
 
 
 // ======================================================
@@ -61,470 +267,216 @@ chargerCompte().then(data => {
 async function deconnexion() {
 
     try {
-        await fetch("/api/logout", {
-            method: "POST"
-        });
-    } catch (error) {
-        console.error("Erreur déconnexion :", error);
-    }
 
-    localStorage.removeItem(SESSION_KEY);
-
-    window.location.href = "/login";
-}
-
-
-// ======================================================
-// UTILITAIRES
-// ======================================================
-
-function escapeHTML(text) {
-
-    const div = document.createElement("div");
-
-    div.textContent = text;
-
-    return div.innerHTML;
-}
-
-
-function scrollChat() {
-
-    if (!chat) return;
-
-    chat.scrollTop = chat.scrollHeight;
-}
-
-
-// ======================================================
-// DÉTECTION DU LANGAGE
-// ======================================================
-
-function detecterLangage(code) {
-
-    if (
-        /\b(def|import|print|class|self|elif)\b/.test(code)
-    ) {
-        return "Python";
-    }
-
-    if (
-        /\b(const|let|var|function|console\.log|document\.)\b/.test(code)
-    ) {
-        return "JavaScript";
-    }
-
-    if (
-        /<!DOCTYPE html>|<html|<body|<div|<section|<header/i.test(code)
-    ) {
-        return "HTML";
-    }
-
-    if (
-        /\b(color|background|margin|padding|display|font-size)\s*:/.test(code)
-    ) {
-        return "CSS";
-    }
-
-    if (
-        /\bSELECT\b|\bINSERT\b|\bUPDATE\b|\bDELETE\b/i.test(code)
-    ) {
-        return "SQL";
-    }
-
-    if (
-        /\b(public|private|static|void|System\.out)\b/.test(code)
-    ) {
-        return "Java";
-    }
-
-    if (
-        /#include\s*<|std::/.test(code)
-    ) {
-        return "C++";
-    }
-
-    return "Code";
-}
-
-
-// ======================================================
-// COLORATION CODE
-// ======================================================
-
-function coloriserCode(code, langage) {
-
-    let result = escapeHTML(code);
-
-    // chaînes de caractères
-    result = result.replace(
-        /(["'`])(?:\\.|(?!\1).)*?\1/g,
-        '<span class="code-value">$&</span>'
-    );
-
-    // mots-clés
-    result = result.replace(
-        /\b(def|class|import|from|return|if|else|elif|for|while|in|True|False|None|const|let|var|function|new|async|await|public|private|static|void|SELECT|FROM|WHERE|INSERT|UPDATE|DELETE)\b/g,
-        '<span class="code-keyword">$1</span>'
-    );
-
-    // fonctions
-    result = result.replace(
-        /\b([a-zA-Z_$][\w$]*)\s*(?=\()/g,
-        '<span class="code-function">$1</span>'
-    );
-
-    // HTML
-    if (langage === "HTML") {
-
-        result = result.replace(
-            /(&lt;\/?)([\w-]+)/g,
-            '$1<span class="code-tag">$2</span>'
-        );
-    }
-
-    return result;
-}
-
-
-// ======================================================
-// CRÉATION D'UN BLOC DE CODE
-// ======================================================
-
-function creerBlocCode(code, langage) {
-
-    const wrapper = document.createElement("div");
-
-    wrapper.className = "bournox-code";
-
-
-    // HEADER
-    const header = document.createElement("div");
-
-    header.className = "code-header";
-
-
-    const language = document.createElement("span");
-
-    language.className = "code-language";
-
-    language.textContent = langage;
-
-
-    const actions = document.createElement("div");
-
-    actions.className = "code-actions";
-
-
-    // BOUTON COPIER
-    const copyButton = document.createElement("button");
-
-    copyButton.className = "code-action";
-
-    copyButton.textContent = "📋 Copier";
-
-
-    // BOUTON TÉLÉCHARGER
-    const downloadButton = document.createElement("button");
-
-    downloadButton.className = "code-action";
-
-    downloadButton.textContent = "⬇️ Télécharger";
-
-
-    actions.appendChild(copyButton);
-    actions.appendChild(downloadButton);
-
-    header.appendChild(language);
-    header.appendChild(actions);
-
-
-    // CONTENU
-    const codeWrapper = document.createElement("div");
-
-    codeWrapper.className = "code-wrapper";
-
-
-    const lineNumbers = document.createElement("div");
-
-    lineNumbers.className = "code-line-numbers";
-
-
-    const codeContent = document.createElement("pre");
-
-    codeContent.className = "code-content";
-
-
-    const lines = code.split("\n");
-
-
-    lineNumbers.innerHTML = lines
-        .map((_, index) => index + 1)
-        .join("<br>");
-
-
-    codeContent.innerHTML =
-        coloriserCode(code, langage);
-
-
-    codeWrapper.appendChild(lineNumbers);
-    codeWrapper.appendChild(codeContent);
-
-
-    wrapper.appendChild(header);
-    wrapper.appendChild(codeWrapper);
-
-
-    // ==================================================
-    // COPIER
-    // ==================================================
-
-    copyButton.addEventListener("click", async () => {
-
-        try {
-
-            await navigator.clipboard.writeText(code);
-
-            copyButton.textContent = "✅ Copié !";
-
-            copyButton.classList.add("copied");
-
-
-            setTimeout(() => {
-
-                copyButton.textContent = "📋 Copier";
-
-                copyButton.classList.remove("copied");
-
-            }, 1500);
-
-
-        } catch (error) {
-
-            copyButton.textContent = "❌ Erreur";
-
-
-            setTimeout(() => {
-
-                copyButton.textContent = "📋 Copier";
-
-            }, 1500);
-        }
-    });
-
-
-    // ==================================================
-    // TÉLÉCHARGEMENT
-    // ==================================================
-
-    downloadButton.addEventListener("click", () => {
-
-        let extension = "txt";
-
-
-        switch (langage.toLowerCase()) {
-
-            case "python":
-                extension = "py";
-                break;
-
-            case "javascript":
-                extension = "js";
-                break;
-
-            case "html":
-                extension = "html";
-                break;
-
-            case "css":
-                extension = "css";
-                break;
-
-            case "sql":
-                extension = "sql";
-                break;
-
-            case "java":
-                extension = "java";
-                break;
-
-            case "c++":
-                extension = "cpp";
-                break;
-        }
-
-
-        const blob = new Blob(
-            [code],
+        await fetch(
+            "/api/logout",
             {
-                type: "text/plain;charset=utf-8"
+                method: "POST"
             }
         );
 
+    } catch (error) {
 
-        const url =
-            URL.createObjectURL(blob);
+        console.error(
+            "Erreur déconnexion :",
+            error
+        );
+    }
 
+    localStorage.removeItem(
+        SESSION_KEY
+    );
 
-        const link =
-            document.createElement("a");
-
-
-        link.href = url;
-
-        link.download =
-            `bournox-code.${extension}`;
-
-
-        document.body.appendChild(link);
-
-        link.click();
-
-        link.remove();
-
-
-        URL.revokeObjectURL(url);
-    });
-
-
-    return wrapper;
+    window.location.href =
+        "/login";
 }
 
 
 // ======================================================
-// AFFICHAGE MESSAGE AVEC CODE
+// NAVIGATION V2
 // ======================================================
 
-function afficherMessageFormate(message) {
-
-    const container =
-        document.createElement("div");
-
-    container.className = "message-text";
-
-
-    const regex =
-        /```(\w+)?\n?([\s\S]*?)```/g;
-
-
-    let dernierIndex = 0;
-
-    let match;
+const viewTitles = {
+    home: "Accueil",
+    chat: "Chat",
+    projects: "Projets",
+    memory: "Mémoire",
+    tools: "Outils",
+    internet: "Internet",
+    voice: "Voix",
+    settings: "Paramètres"
+};
 
 
-    while (
-        (match = regex.exec(message)) !== null
-    ) {
+function ouvrirVue(viewName) {
 
-        // TEXTE AVANT LE CODE
-        const texteAvant =
-            message.slice(
-                dernierIndex,
-                match.index
+    const view =
+        document.getElementById(
+            `view-${viewName}`
+        );
+
+    if (!view) return;
+
+    $$(".view").forEach(
+        element => {
+            element.classList.remove(
+                "active"
             );
-
-
-        if (texteAvant.trim()) {
-
-            const texte =
-                document.createElement("div");
-
-
-            texte.innerHTML =
-                escapeHTML(texteAvant)
-                    .replace(/\n/g, "<br>");
-
-
-            container.appendChild(texte);
         }
+    );
+
+    view.classList.add(
+        "active"
+    );
 
 
-        // CODE
-        const code =
-            match[2].trim();
+    $$(".nav-btn[data-view]").forEach(
+        button => {
 
-
-        const langage =
-            match[1] ||
-            detecterLangage(code);
-
-
-        const bloc =
-            creerBlocCode(
-                code,
-                langage
+            button.classList.toggle(
+                "active",
+                button.dataset.view === viewName
             );
+        }
+    );
 
 
-        container.appendChild(bloc);
+    const title =
+        document.getElementById(
+            "topbar-title"
+        );
 
+    if (title) {
 
-        dernierIndex =
-            regex.lastIndex;
+        title.textContent =
+            viewTitles[viewName] ||
+            "BourNox.AI";
     }
 
 
-    // TEXTE APRÈS LE CODE
-    const texteFinal =
-        message.slice(dernierIndex);
-
-
-    if (texteFinal.trim()) {
-
-        const texte =
-            document.createElement("div");
-
-
-        texte.innerHTML =
-            escapeHTML(texteFinal)
-                .replace(/\n/g, "<br>");
-
-
-        container.appendChild(texte);
+    if (viewName === "memory") {
+        chargerMemoire();
     }
 
 
-    return container;
+    if (viewName === "projects") {
+        chargerProjets();
+    }
+
+
+    if (viewName === "chat") {
+
+        setTimeout(
+            () => input?.focus(),
+            100
+        );
+    }
+
+
+    if (viewName === "settings") {
+        chargerParametresUI();
+    }
+
+
+    if (viewName === "home") {
+        chargerMemoire();
+    }
 }
 
 
 // ======================================================
-// MESSAGE UTILISATEUR
+// NOUVELLE DISCUSSION
+// ======================================================
+
+function nouvelleDiscussion() {
+
+    sessionId =
+        crypto.randomUUID();
+
+    localStorage.setItem(
+        SESSION_KEY,
+        sessionId
+    );
+
+    if (chatArea) {
+
+        chatArea.innerHTML = `
+            <div class="welcome-chat">
+
+                <div class="welcome-icon">
+                    BN
+                </div>
+
+                <h2>Nouvelle discussion 👋</h2>
+
+                <p>
+                    Une nouvelle conversation avec
+                    <strong>BourNox.AI</strong>.
+                </p>
+
+            </div>
+        `;
+    }
+
+    ouvrirVue("chat");
+
+    afficherNotification(
+        "Nouvelle discussion créée."
+    );
+}
+
+
+// ======================================================
+// CHAT
 // ======================================================
 
 function ajouterMessageUser(message) {
 
+    if (!chatArea) return;
+
+    const welcome =
+        chatArea.querySelector(
+            ".welcome-chat"
+        );
+
+    if (welcome) {
+        welcome.remove();
+    }
+
+
     const el =
         document.createElement("div");
-
 
     el.className =
         "message user";
 
-
     el.textContent =
         message;
 
-
-    chat.insertBefore(
-        el,
-        composer
+    chatArea.appendChild(
+        el
     );
-
 
     scrollChat();
 }
 
 
-// ======================================================
-// MESSAGE BOURNOX
-// ======================================================
-
 function ajouterMessageBot(message) {
+
+    if (!chatArea) return;
+
+    const welcome =
+        chatArea.querySelector(
+            ".welcome-chat"
+        );
+
+    if (welcome) {
+        welcome.remove();
+    }
+
 
     const el =
         document.createElement("div");
-
 
     el.className =
         "message bot";
@@ -533,10 +485,8 @@ function ajouterMessageBot(message) {
     const title =
         document.createElement("div");
 
-
     title.className =
         "bot-title";
-
 
     title.innerHTML = `
         <span class="mini-bn">BN</span>
@@ -545,71 +495,103 @@ function ajouterMessageBot(message) {
     `;
 
 
-    el.appendChild(title);
+    el.appendChild(
+        title
+    );
 
 
-    const contenu =
-        afficherMessageFormate(message);
+    const content =
+        afficherMessageFormate(
+            message
+        );
+
+    el.appendChild(
+        content
+    );
 
 
-    el.appendChild(contenu);
-
-
-    chat.insertBefore(
-        el,
-        composer
+    chatArea.appendChild(
+        el
     );
 
 
     scrollChat();
+
+
+    if (
+        settings.autoRead &&
+        "speechSynthesis" in window
+    ) {
+
+        lireTexte(
+            nettoyerTextePourVoix(
+                message
+            )
+        );
+    }
 }
 
 
-// ======================================================
-// CHARGEMENT
-// ======================================================
-
 function ajouterChargement() {
+
+    if (!chatArea) return null;
 
     const el =
         document.createElement("div");
 
-
     el.className =
         "message bot bournox-loading";
 
-
     el.innerHTML = `
         <div class="bot-title">
-            <span class="mini-bn">BN</span>
+
+            <span class="mini-bn">
+                BN
+            </span>
+
             BourNox.AI
-            <i>● réfléchit...</i>
+
+            <i>
+                ● réfléchit...
+            </i>
+
         </div>
 
         <div class="thinking-animation">
-            🧠 Je réfléchis...
+
+            <span>🧠</span>
+
+            <span>
+                BourNox réfléchit
+            </span>
+
+            <div class="thinking-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
         </div>
     `;
 
-
-    chat.insertBefore(
-        el,
-        composer
+    chatArea.appendChild(
+        el
     );
 
-
     scrollChat();
-
 
     return el;
 }
 
 
 // ======================================================
-// ENVOYER UN MESSAGE
+// ENVOI CHAT
 // ======================================================
 
 async function envoyer(messageForce = null) {
+
+    if (!input || !send) return;
+
 
     const message =
         messageForce ||
@@ -626,10 +608,16 @@ async function envoyer(messageForce = null) {
 
     input.value = "";
 
+    ajusterHauteurInput();
+
     send.disabled = true;
 
 
-    ajouterMessageUser(message);
+    ouvrirVue("chat");
+
+    ajouterMessageUser(
+        message
+    );
 
 
     const loading =
@@ -650,9 +638,25 @@ async function envoyer(messageForce = null) {
                     },
 
                     body: JSON.stringify({
+
                         message,
+
                         session_id:
-                            sessionId
+                            sessionId,
+
+                        mode:
+                            settings.mode,
+
+                        response_style:
+                            settings.response_style,
+
+                        personality:
+                            settings.personality,
+
+                        project:
+                            window.bournoxProject ||
+                            ""
+
                     })
                 }
             );
@@ -661,13 +665,16 @@ async function envoyer(messageForce = null) {
         const data =
             await response
                 .json()
-                .catch(() => ({}));
+                .catch(
+                    () => ({})
+                );
 
 
-        loading.remove();
+        if (loading) {
+            loading.remove();
+        }
 
 
-        // SESSION EXPIRÉE
         if (
             response.status === 401
         ) {
@@ -679,24 +686,22 @@ async function envoyer(messageForce = null) {
         }
 
 
-        // ERREUR SERVEUR
         if (!response.ok) {
 
             ajouterMessageBot(
                 data.response ||
-                "⚠️ Erreur du serveur BourNox."
+                data.error ||
+                "⚠️ Une erreur est survenue."
             );
 
             return;
         }
 
 
-        // NOUVELLE SESSION
         if (data.session_id) {
 
             sessionId =
                 data.session_id;
-
 
             localStorage.setItem(
                 SESSION_KEY,
@@ -705,7 +710,6 @@ async function envoyer(messageForce = null) {
         }
 
 
-        // RÉPONSE
         ajouterMessageBot(
             data.response ||
             "Je n'ai pas reçu de réponse."
@@ -720,13 +724,14 @@ async function envoyer(messageForce = null) {
         );
 
 
-        loading.remove();
+        if (loading) {
+            loading.remove();
+        }
 
 
         ajouterMessageBot(
             "⚠️ Impossible de contacter le cerveau BourNox."
         );
-
 
     } finally {
 
@@ -737,66 +742,642 @@ async function envoyer(messageForce = null) {
 }
 
 
-// ======================================================
-// ENVOI AVEC ENTRÉE
-// ======================================================
+function envoyerCommande(message) {
 
-if (send) {
+    if (!message) return;
 
-    send.addEventListener(
-        "click",
-        () => envoyer()
-    );
+    ouvrirVue("chat");
+
+    envoyer(message);
 }
 
 
-if (input) {
+// ======================================================
+// ENTER
+// ======================================================
 
-    input.addEventListener(
-        "keydown",
-        event => {
+input?.addEventListener(
+    "keydown",
+    event => {
 
-            if (
-                event.key === "Enter" &&
-                !event.shiftKey
-            ) {
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
 
-                event.preventDefault();
+            event.preventDefault();
 
-                envoyer();
+            envoyer();
+        }
+    }
+);
+
+
+input?.addEventListener(
+    "input",
+    ajusterHauteurInput
+);
+
+
+function ajusterHauteurInput() {
+
+    if (!input) return;
+
+    input.style.height =
+        "auto";
+
+    input.style.height =
+        Math.min(
+            input.scrollHeight,
+            150
+        ) + "px";
+}
+
+
+// ======================================================
+// HISTORIQUE
+// ======================================================
+
+async function chargerHistorique() {
+
+    if (!chatArea) return;
+
+    try {
+
+        const response =
+            await fetch(
+                `/history?session_id=${encodeURIComponent(sessionId)}`
+            );
+
+
+        if (
+            response.status === 401
+        ) {
+
+            window.location.href =
+                "/login";
+
+            return;
+        }
+
+
+        if (!response.ok) {
+            return;
+        }
+
+
+        const data =
+            await response.json();
+
+
+        const messages =
+            data.messages ||
+            data.history ||
+            [];
+
+
+        if (!Array.isArray(messages)) {
+            return;
+        }
+
+
+        chatArea.innerHTML = "";
+
+
+        if (!messages.length) {
+
+            chatArea.innerHTML = `
+                <div class="welcome-chat">
+
+                    <div class="welcome-icon">
+                        BN
+                    </div>
+
+                    <h2>Nouvelle discussion 👋</h2>
+
+                    <p>
+                        Commence une conversation avec BourNox.AI.
+                    </p>
+
+                </div>
+            `;
+
+            return;
+        }
+
+
+        messages.forEach(
+            item => {
+
+                if (
+                    item.role === "user"
+                ) {
+
+                    ajouterMessageUser(
+                        item.content
+                    );
+
+                } else if (
+                    item.role === "assistant"
+                ) {
+
+                    ajouterMessageBot(
+                        item.content
+                    );
+                }
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur historique :",
+            error
+        );
+    }
+}
+
+
+// ======================================================
+// FORMATAGE CODE
+// ======================================================
+
+function detecterLangage(code) {
+
+    if (
+        /\b(def|import|print|class|self|elif)\b/
+            .test(code)
+    ) {
+        return "Python";
+    }
+
+    if (
+        /\b(const|let|var|function|console\.log|document\.)\b/
+            .test(code)
+    ) {
+        return "JavaScript";
+    }
+
+    if (
+        /<!DOCTYPE html>|<html|<body|<div|<section|<header/i
+            .test(code)
+    ) {
+        return "HTML";
+    }
+
+    if (
+        /\b(color|background|margin|padding|display|font-size)\s*:/
+            .test(code)
+    ) {
+        return "CSS";
+    }
+
+    if (
+        /\bSELECT\b|\bINSERT\b|\bUPDATE\b|\bDELETE\b/i
+            .test(code)
+    ) {
+        return "SQL";
+    }
+
+    if (
+        /\b(public|private|static|void|System\.out)\b/
+            .test(code)
+    ) {
+        return "Java";
+    }
+
+    if (
+        /#include\s*<|std::/
+            .test(code)
+    ) {
+        return "C++";
+    }
+
+    return "Code";
+}
+
+
+function coloriserCode(code, langage) {
+
+    let result =
+        escapeHTML(code);
+
+
+    result =
+        result.replace(
+            /(["'`])(?:\\.|(?!\1).)*?\1/g,
+            '<span class="code-value">$&</span>'
+        );
+
+
+    result =
+        result.replace(
+            /\b(def|class|import|from|return|if|else|elif|for|while|in|True|False|None|const|let|var|function|new|async|await|public|private|static|void|SELECT|FROM|WHERE|INSERT|UPDATE|DELETE)\b/g,
+            '<span class="code-keyword">$1</span>'
+        );
+
+
+    result =
+        result.replace(
+            /\b([a-zA-Z_$][\w$]*)\s*(?=\()/g,
+            '<span class="code-function">$1</span>'
+        );
+
+
+    if (langage === "HTML") {
+
+        result =
+            result.replace(
+                /(&lt;\/?)([\w-]+)/g,
+                '$1<span class="code-tag">$2</span>'
+            );
+    }
+
+
+    return result;
+}
+
+
+function creerBlocCode(
+    code,
+    langage
+) {
+
+    const wrapper =
+        document.createElement("div");
+
+    wrapper.className =
+        "bournox-code";
+
+
+    const header =
+        document.createElement("div");
+
+    header.className =
+        "code-header";
+
+
+    const language =
+        document.createElement("span");
+
+    language.className =
+        "code-language";
+
+    language.textContent =
+        langage;
+
+
+    const actions =
+        document.createElement("div");
+
+    actions.className =
+        "code-actions";
+
+
+    const copyButton =
+        document.createElement("button");
+
+    copyButton.className =
+        "code-action";
+
+    copyButton.textContent =
+        "📋 Copier";
+
+
+    const downloadButton =
+        document.createElement("button");
+
+    downloadButton.className =
+        "code-action";
+
+    downloadButton.textContent =
+        "⬇️ Télécharger";
+
+
+    actions.append(
+        copyButton,
+        downloadButton
+    );
+
+    header.append(
+        language,
+        actions
+    );
+
+
+    const codeWrapper =
+        document.createElement("div");
+
+    codeWrapper.className =
+        "code-wrapper";
+
+
+    const lineNumbers =
+        document.createElement("div");
+
+    lineNumbers.className =
+        "code-line-numbers";
+
+
+    const codeContent =
+        document.createElement("pre");
+
+    codeContent.className =
+        "code-content";
+
+
+    const lines =
+        code.split("\n");
+
+
+    lineNumbers.innerHTML =
+        lines
+            .map(
+                (_, index) =>
+                    index + 1
+            )
+            .join("<br>");
+
+
+    codeContent.innerHTML =
+        coloriserCode(
+            code,
+            langage
+        );
+
+
+    codeWrapper.append(
+        lineNumbers,
+        codeContent
+    );
+
+
+    wrapper.append(
+        header,
+        codeWrapper
+    );
+
+
+    copyButton.addEventListener(
+        "click",
+        async () => {
+
+            try {
+
+                await navigator.clipboard
+                    .writeText(code);
+
+                copyButton.textContent =
+                    "✅ Copié !";
+
+                copyButton.classList.add(
+                    "copied"
+                );
+
+
+                setTimeout(
+                    () => {
+
+                        copyButton.textContent =
+                            "📋 Copier";
+
+                        copyButton.classList.remove(
+                            "copied"
+                        );
+
+                    },
+                    1500
+                );
+
+            } catch {
+
+                afficherNotification(
+                    "Impossible de copier le code."
+                );
             }
         }
     );
+
+
+    downloadButton.addEventListener(
+        "click",
+        () => {
+
+            const extension =
+                obtenirExtension(
+                    langage
+                );
+
+
+            const blob =
+                new Blob(
+                    [code],
+                    {
+                        type:
+                            "text/plain;charset=utf-8"
+                    }
+                );
+
+
+            const url =
+                URL.createObjectURL(
+                    blob
+                );
+
+
+            const link =
+                document.createElement("a");
+
+            link.href =
+                url;
+
+            link.download =
+                `bournox-code.${extension}`;
+
+            document.body.appendChild(
+                link
+            );
+
+            link.click();
+
+            link.remove();
+
+            URL.revokeObjectURL(
+                url
+            );
+        }
+    );
+
+
+    return wrapper;
+}
+
+
+function obtenirExtension(langage) {
+
+    switch (
+        langage.toLowerCase()
+    ) {
+
+        case "python":
+            return "py";
+
+        case "javascript":
+            return "js";
+
+        case "html":
+            return "html";
+
+        case "css":
+            return "css";
+
+        case "sql":
+            return "sql";
+
+        case "java":
+            return "java";
+
+        case "c++":
+            return "cpp";
+
+        default:
+            return "txt";
+    }
+}
+
+
+function afficherMessageFormate(
+    message
+) {
+
+    const container =
+        document.createElement("div");
+
+    container.className =
+        "message-text";
+
+
+    const regex =
+        /```(\w+)?\n?([\s\S]*?)```/g;
+
+
+    let dernierIndex = 0;
+
+    let match;
+
+
+    while (
+        (match =
+            regex.exec(message)) !== null
+    ) {
+
+        const texteAvant =
+            message.slice(
+                dernierIndex,
+                match.index
+            );
+
+
+        if (texteAvant.trim()) {
+
+            const texte =
+                document.createElement("div");
+
+            texte.innerHTML =
+                escapeHTML(
+                    texteAvant
+                )
+                .replace(
+                    /\n/g,
+                    "<br>"
+                );
+
+            container.appendChild(
+                texte
+            );
+        }
+
+
+        const code =
+            match[2].trim();
+
+
+        const langage =
+            match[1] ||
+            detecterLangage(code);
+
+
+        container.appendChild(
+            creerBlocCode(
+                code,
+                langage
+            )
+        );
+
+
+        dernierIndex =
+            regex.lastIndex;
+    }
+
+
+    const texteFinal =
+        message.slice(
+            dernierIndex
+        );
+
+
+    if (texteFinal.trim()) {
+
+        const texte =
+            document.createElement("div");
+
+        texte.innerHTML =
+            escapeHTML(
+                texteFinal
+            )
+            .replace(
+                /\n/g,
+                "<br>"
+            );
+
+        container.appendChild(
+            texte
+        );
+    }
+
+
+    return container;
 }
 
 
 // ======================================================
-// GÉNÉRATEUR D'IMAGE
+// IMAGE
 // ======================================================
 
 function ouvrirCreateurImage() {
 
-    const ancien =
+    ouvrirVue("chat");
+
+
+    const existing =
         document.getElementById(
             "image-creator"
         );
 
-
-    if (ancien) {
-        ancien.remove();
+    if (existing) {
+        existing.remove();
     }
 
 
     const el =
         document.createElement("div");
 
-
     el.id =
         "image-creator";
 
-
     el.className =
-        "message bot image-generator";
+        "message bot";
 
 
     el.innerHTML = `
@@ -806,22 +1387,45 @@ function ouvrirCreateurImage() {
             <i>● Générateur d'image</i>
         </div>
 
-        <div class="image-generator-title">
+        <div>
             🎨 Décris l'image que tu veux créer :
         </div>
 
         <textarea
             id="image-prompt"
-            placeholder="Exemple : un robot BN dans une ville futuriste..."
+            style="
+                width:100%;
+                min-height:100px;
+                margin-top:12px;
+                padding:12px;
+                border:1px solid #1b4569;
+                border-radius:10px;
+                background:#030b15;
+                color:white;
+                resize:vertical;
+            "
+            placeholder="Ex : un robot BN dans une ville futuriste..."
         ></textarea>
 
-        <div class="image-generator-buttons">
+        <div
+            style="
+                display:flex;
+                gap:7px;
+                margin-top:10px;
+            "
+        >
 
-            <button id="create-image-btn">
-                🎨 Créer l'image
+            <button
+                id="create-image-btn"
+                class="primary-btn"
+            >
+                🎨 Créer
             </button>
 
-            <button id="cancel-image-btn">
+            <button
+                id="cancel-image-btn"
+                class="secondary-btn"
+            >
                 Annuler
             </button>
 
@@ -829,9 +1433,8 @@ function ouvrirCreateurImage() {
     `;
 
 
-    chat.insertBefore(
-        el,
-        composer
+    chatArea.appendChild(
+        el
     );
 
 
@@ -848,7 +1451,6 @@ function ouvrirCreateurImage() {
         const prompt =
             promptInput.value.trim();
 
-
         if (!prompt) {
 
             promptInput.focus();
@@ -856,10 +1458,11 @@ function ouvrirCreateurImage() {
             return;
         }
 
-
         el.remove();
 
-        genererImage(prompt);
+        genererImage(
+            prompt
+        );
     };
 
 
@@ -872,14 +1475,14 @@ function ouvrirCreateurImage() {
 
 
     promptInput.focus();
+
+    scrollChat();
 }
 
 
-// ======================================================
-// GÉNÉRER IMAGE
-// ======================================================
-
-async function genererImage(prompt) {
+async function genererImage(
+    prompt
+) {
 
     ajouterMessageUser(
         "🖼️ Crée cette image : " +
@@ -914,10 +1517,12 @@ async function genererImage(prompt) {
         const data =
             await response
                 .json()
-                .catch(() => ({}));
+                .catch(
+                    () => ({})
+                );
 
 
-        loading.remove();
+        loading?.remove();
 
 
         if (!response.ok) {
@@ -946,9 +1551,7 @@ async function genererImage(prompt) {
             error
         );
 
-
-        loading.remove();
-
+        loading?.remove();
 
         ajouterMessageBot(
             "⚠️ La génération d'image a échoué."
@@ -957,15 +1560,12 @@ async function genererImage(prompt) {
 }
 
 
-// ======================================================
-// AFFICHER IMAGE
-// ======================================================
-
-function afficherImage(base64) {
+function afficherImage(
+    base64
+) {
 
     const el =
         document.createElement("div");
-
 
     el.className =
         "message bot";
@@ -974,10 +1574,8 @@ function afficherImage(base64) {
     const title =
         document.createElement("div");
 
-
     title.className =
         "bot-title";
-
 
     title.innerHTML = `
         <span class="mini-bn">BN</span>
@@ -989,30 +1587,24 @@ function afficherImage(base64) {
     const image =
         document.createElement("img");
 
-
     image.src =
         "data:image/png;base64," +
         base64;
 
-
     image.alt =
         "Image générée par BourNox.AI";
-
 
     image.style.maxWidth =
         "100%";
 
-
     image.style.borderRadius =
-        "16px";
-
-
-    image.style.marginTop =
-        "10px";
-
+        "14px";
 
     image.style.display =
         "block";
+
+    image.style.marginTop =
+        "8px";
 
 
     el.append(
@@ -1021,56 +1613,11 @@ function afficherImage(base64) {
     );
 
 
-    chat.insertBefore(
-        el,
-        composer
+    chatArea.appendChild(
+        el
     );
 
-
     scrollChat();
-}
-
-
-// ======================================================
-// RACCOURCIS
-// ======================================================
-
-function envoyerCommande(message) {
-
-    if (!input) return;
-
-    input.value = message;
-
-    envoyer();
-}
-
-
-// ======================================================
-// ACCUEIL
-// ======================================================
-
-function allerAccueil() {
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-
-    if (input) {
-        input.focus();
-    }
-}
-
-
-// ======================================================
-// CHAT
-// ======================================================
-
-function allerChat() {
-
-    if (input) {
-        input.focus();
-    }
 }
 
 
@@ -1078,11 +1625,584 @@ function allerChat() {
 // MÉMOIRE
 // ======================================================
 
+async function chargerMemoire(
+    force = false
+) {
+
+    const container =
+        document.getElementById(
+            "memory-container"
+        );
+
+    if (!container) return;
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/memory"
+            );
+
+
+        if (
+            response.status === 401
+        ) {
+
+            window.location.href =
+                "/login";
+
+            return;
+        }
+
+
+        const data =
+            await response.json();
+
+
+        const memories =
+            data.memories ||
+            data.memory ||
+            [];
+
+
+        container.innerHTML = "";
+
+
+        if (!Array.isArray(memories) ||
+            memories.length === 0) {
+
+            container.innerHTML = `
+                <div class="empty-state">
+
+                    <div>🧠</div>
+
+                    <h3>
+                        Ta mémoire est encore vide
+                    </h3>
+
+                    <p>
+                        Dis « souviens-toi que... »
+                        pendant une conversation.
+                    </p>
+
+                </div>
+            `;
+
+            mettreAJourMemoireDroite(
+                0
+            );
+
+            return;
+        }
+
+
+        memories.forEach(
+            memory => {
+
+                const content =
+                    typeof memory === "string"
+                        ? memory
+                        : (
+                            memory.content ||
+                            memory.memory ||
+                            ""
+                        );
+
+                const date =
+                    typeof memory === "object"
+                        ? (
+                            memory.created_at ||
+                            ""
+                        )
+                        : "";
+
+
+                const item =
+                    document.createElement(
+                        "div"
+                    );
+
+                item.className =
+                    "memory-item";
+
+
+                item.innerHTML = `
+                    <div class="memory-item-icon">
+                        🧠
+                    </div>
+
+                    <div class="memory-item-content">
+
+                        <strong>
+                            Souvenir enregistré
+                        </strong>
+
+                        <p>
+                            ${escapeHTML(content)}
+                        </p>
+
+                    </div>
+
+                    ${
+                        date
+                            ? `
+                                <span class="memory-date">
+                                    ${escapeHTML(date)}
+                                </span>
+                              `
+                            : ""
+                    }
+                `;
+
+
+                container.appendChild(
+                    item
+                );
+            }
+        );
+
+
+        mettreAJourMemoireDroite(
+            memories.length
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur mémoire :",
+            error
+        );
+
+        container.innerHTML = `
+            <div class="empty-state">
+                <div>⚠️</div>
+                <h3>Impossible de charger la mémoire</h3>
+            </div>
+        `;
+    }
+}
+
+
+function mettreAJourMemoireDroite(
+    count
+) {
+
+    const preview =
+        document.getElementById(
+            "right-memory-preview"
+        );
+
+    if (!preview) return;
+
+
+    preview.innerHTML = `
+        <div class="mini-memory">
+
+            <span>🧠</span>
+
+            <div>
+
+                <strong>
+                    Mémoire active
+                </strong>
+
+                <small>
+                    ${
+                        count
+                            ? `${count} souvenir${count > 1 ? "s" : ""} enregistré${count > 1 ? "s" : ""}`
+                            : "Aucun souvenir"
+                    }
+                </small>
+
+            </div>
+
+        </div>
+    `;
+}
+
+
 function demanderMemoire() {
 
-    envoyer(
-        "Montre-moi ce que tu sais de ma mémoire."
+    ouvrirVue("memory");
+
+    chargerMemoire();
+}
+
+
+// ======================================================
+// PROJETS
+// ======================================================
+
+async function chargerProjets() {
+
+    const container =
+        document.getElementById(
+            "projects-container"
+        );
+
+    if (!container) return;
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/projects"
+            );
+
+
+        if (
+            response.status === 401
+        ) {
+
+            window.location.href =
+                "/login";
+
+            return;
+        }
+
+
+        const data =
+            await response.json();
+
+
+        const projects =
+            data.projects ||
+            [];
+
+
+        container.innerHTML = "";
+
+
+        if (!projects.length) {
+
+            container.innerHTML = `
+                <div class="empty-state">
+
+                    <div>📁</div>
+
+                    <h3>
+                        Aucun projet
+                    </h3>
+
+                    <p>
+                        Crée ton premier projet pour donner
+                        un contexte permanent à BourNox.
+                    </p>
+
+                    <button
+                        class="primary-btn"
+                        style="margin-top:12px"
+                        onclick="ouvrirCreationProjet()"
+                    >
+                        ＋ Créer un projet
+                    </button>
+
+                </div>
+            `;
+
+            return;
+        }
+
+
+        projects.forEach(
+            project => {
+
+                const name =
+                    project.name ||
+                    "Projet";
+
+
+                const context =
+                    project.context ||
+                    "Aucun contexte défini.";
+
+
+                const item =
+                    document.createElement(
+                        "div"
+                    );
+
+                item.className =
+                    "project-card";
+
+
+                item.innerHTML = `
+                    <div class="project-card-icon">
+                        📁
+                    </div>
+
+                    <h3>
+                        ${escapeHTML(name)}
+                    </h3>
+
+                    <p>
+                        ${escapeHTML(context)}
+                    </p>
+
+                    <div class="project-card-footer">
+
+                        <button
+                            onclick="selectionnerProjet(${JSON.stringify(name)})"
+                        >
+                            Ouvrir
+                        </button>
+
+                        <button
+                            class="danger"
+                            onclick="supprimerProjet(${JSON.stringify(name)})"
+                        >
+                            Supprimer
+                        </button>
+
+                    </div>
+                `;
+
+
+                container.appendChild(
+                    item
+                );
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur projets :",
+            error
+        );
+
+        container.innerHTML = `
+            <div class="empty-state">
+                <div>⚠️</div>
+                <h3>Impossible de charger les projets</h3>
+            </div>
+        `;
+    }
+}
+
+
+function ouvrirCreationProjet() {
+
+    const modal =
+        document.getElementById(
+            "project-modal"
+        );
+
+    if (!modal) return;
+
+    modal.classList.add(
+        "open"
     );
+
+    document.getElementById(
+        "project-name"
+    )?.focus();
+}
+
+
+async function creerProjet() {
+
+    const nameInput =
+        document.getElementById(
+            "project-name"
+        );
+
+    const contextInput =
+        document.getElementById(
+            "project-context"
+        );
+
+
+    const name =
+        nameInput?.value.trim();
+
+    const context =
+        contextInput?.value.trim() ||
+        "";
+
+
+    if (!name) {
+
+        afficherNotification(
+            "Donne un nom au projet."
+        );
+
+        nameInput?.focus();
+
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/projects",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        name,
+                        context
+                    })
+                }
+            );
+
+
+        const data =
+            await response
+                .json()
+                .catch(
+                    () => ({})
+                );
+
+
+        if (!response.ok) {
+
+            afficherNotification(
+                data.error ||
+                "Impossible de créer le projet."
+            );
+
+            return;
+        }
+
+
+        fermerModal(
+            "project-modal"
+        );
+
+
+        if (nameInput) {
+            nameInput.value = "";
+        }
+
+        if (contextInput) {
+            contextInput.value = "";
+        }
+
+
+        chargerProjets();
+
+
+        afficherNotification(
+            "Projet créé avec succès."
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur création projet :",
+            error
+        );
+
+        afficherNotification(
+            "Erreur lors de la création du projet."
+        );
+    }
+}
+
+
+function selectionnerProjet(
+    name
+) {
+
+    window.bournoxProject =
+        name;
+
+
+    localStorage.setItem(
+        "bournox_project",
+        name
+    );
+
+
+    ouvrirVue("chat");
+
+
+    afficherNotification(
+        `Projet "${name}" sélectionné.`
+    );
+
+
+    envoyer(
+        `Je travaille maintenant sur le projet "${name}".`
+    );
+}
+
+
+async function supprimerProjet(
+    name
+) {
+
+    if (
+        !confirm(
+            `Supprimer le projet "${name}" ?`
+        )
+    ) {
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                `/projects/${encodeURIComponent(name)}`,
+                {
+                    method: "DELETE"
+                }
+            );
+
+
+        if (!response.ok) {
+
+            afficherNotification(
+                "Impossible de supprimer le projet."
+            );
+
+            return;
+        }
+
+
+        if (
+            window.bournoxProject === name
+        ) {
+
+            window.bournoxProject =
+                "";
+
+            localStorage.removeItem(
+                "bournox_project"
+            );
+        }
+
+
+        chargerProjets();
+
+
+        afficherNotification(
+            "Projet supprimé."
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur suppression projet :",
+            error
+        );
+    }
 }
 
 
@@ -1090,11 +2210,18 @@ function demanderMemoire() {
 // OUTILS
 // ======================================================
 
-function afficherOutils() {
+function preparerDevoirs() {
 
-    ajouterMessageBot(
-        "🔧 Les outils BourNox V2 sont en développement."
+    ouvrirVue("chat");
+
+    envoyer(
+        "Aide-moi à faire mes devoirs. Explique-moi étape par étape et adapte tes explications à mon niveau."
     );
+}
+
+
+function afficherOutils() {
+    ouvrirVue("tools");
 }
 
 
@@ -1102,11 +2229,54 @@ function afficherOutils() {
 // INTERNET
 // ======================================================
 
-function demanderInternet() {
+function lancerRechercheInternet() {
+
+    const inputWeb =
+        document.getElementById(
+            "internet-input"
+        );
+
+    const query =
+        inputWeb?.value.trim();
+
+
+    if (!query) {
+
+        inputWeb?.focus();
+
+        return;
+    }
+
+
+    ouvrirVue("chat");
+
 
     envoyer(
-        "Utilise Internet pour répondre à ma demande."
+        `Utilise Internet pour répondre à cette demande : ${query}`
     );
+}
+
+
+function rechercheRapide(
+    query
+) {
+
+    const inputWeb =
+        document.getElementById(
+            "internet-input"
+        );
+
+    if (inputWeb) {
+        inputWeb.value =
+            query;
+    }
+
+    lancerRechercheInternet();
+}
+
+
+function demanderInternet() {
+    ouvrirVue("internet");
 }
 
 
@@ -1114,11 +2284,260 @@ function demanderInternet() {
 // VOIX
 // ======================================================
 
-function afficherVoix() {
+let recognition = null;
+let isListening = false;
 
-    ajouterMessageBot(
-        "🎙️ Le mode vocal BourNox V2 arrive bientôt."
+
+function obtenirSpeechRecognition() {
+
+    return (
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition ||
+        null
     );
+}
+
+
+function demarrerDictation() {
+
+    const Recognition =
+        obtenirSpeechRecognition();
+
+
+    if (!Recognition) {
+
+        afficherNotification(
+            "La reconnaissance vocale n'est pas disponible dans ce navigateur."
+        );
+
+        return;
+    }
+
+
+    if (isListening) {
+
+        recognition?.stop();
+
+        return;
+    }
+
+
+    recognition =
+        new Recognition();
+
+
+    recognition.lang =
+        "fr-FR";
+
+    recognition.continuous =
+        false;
+
+    recognition.interimResults =
+        true;
+
+
+    isListening = true;
+
+    mettreAJourEtatVoix(
+        true
+    );
+
+
+    recognition.onresult =
+        event => {
+
+            let transcript =
+                "";
+
+
+            for (
+                let i = event.resultIndex;
+                i < event.results.length;
+                i++
+            ) {
+
+                transcript +=
+                    event.results[i][0].transcript;
+            }
+
+
+            if (input) {
+                input.value =
+                    transcript;
+
+                ajusterHauteurInput();
+            }
+        };
+
+
+    recognition.onend =
+        () => {
+
+            isListening =
+                false;
+
+            mettreAJourEtatVoix(
+                false
+            );
+
+
+            if (
+                input?.value.trim()
+            ) {
+
+                envoyer();
+            }
+        };
+
+
+    recognition.onerror =
+        event => {
+
+            console.error(
+                "Erreur voix :",
+                event.error
+            );
+
+            isListening =
+                false;
+
+            mettreAJourEtatVoix(
+                false
+            );
+
+            afficherNotification(
+                "La reconnaissance vocale a rencontré un problème."
+            );
+        };
+
+
+    recognition.start();
+}
+
+
+function mettreAJourEtatVoix(
+    listening
+) {
+
+    const orb =
+        document.getElementById(
+            "voice-orb"
+        );
+
+    const status =
+        document.getElementById(
+            "voice-status"
+        );
+
+    const description =
+        document.getElementById(
+            "voice-description"
+        );
+
+    const button =
+        document.getElementById(
+            "voice-button"
+        );
+
+
+    if (orb) {
+
+        orb.classList.toggle(
+            "listening",
+            listening
+        );
+    }
+
+
+    if (status) {
+
+        status.textContent =
+            listening
+                ? "Je t'écoute..."
+                : "Prêt à écouter";
+    }
+
+
+    if (description) {
+
+        description.textContent =
+            listening
+                ? "Parle maintenant."
+                : "Appuie sur le bouton pour commencer la dictée.";
+    }
+
+
+    if (button) {
+
+        button.textContent =
+            listening
+                ? "⏹️ Arrêter"
+                : "🎙️ Parler";
+    }
+}
+
+
+function afficherVoix() {
+    ouvrirVue("voice");
+}
+
+
+function lireTexte(
+    text
+) {
+
+    if (
+        !settings.autoRead ||
+        !("speechSynthesis" in window) ||
+        !text
+    ) {
+        return;
+    }
+
+
+    window.speechSynthesis.cancel();
+
+
+    const utterance =
+        new SpeechSynthesisUtterance(
+            text.slice(0, 1800)
+        );
+
+
+    utterance.lang =
+        "fr-FR";
+
+    utterance.rate =
+        .98;
+
+    utterance.pitch =
+        1;
+
+
+    window.speechSynthesis.speak(
+        utterance
+    );
+}
+
+
+function nettoyerTextePourVoix(
+    text
+) {
+
+    return String(text)
+        .replace(
+            /```[\s\S]*?```/g,
+            " bloc de code "
+        )
+        .replace(
+            /[*_#>`]/g,
+            ""
+        )
+        .replace(
+            /\s+/g,
+            " "
+        )
+        .trim();
 }
 
 
@@ -1126,191 +2545,212 @@ function afficherVoix() {
 // PARAMÈTRES
 // ======================================================
 
-function afficherParametres() {
+function chargerParametresUI() {
 
-    ajouterMessageBot(
-        "⚙️ Les paramètres BourNox V2 arrivent bientôt."
+    const mode =
+        document.getElementById(
+            "setting-mode"
+        );
+
+    const personality =
+        document.getElementById(
+            "setting-personality"
+        );
+
+    const style =
+        document.getElementById(
+            "setting-style"
+        );
+
+    const autoRead =
+        document.getElementById(
+            "voice-auto-read"
+        );
+
+
+    if (mode) {
+        mode.value =
+            settings.mode;
+    }
+
+    if (personality) {
+        personality.value =
+            settings.personality;
+    }
+
+    if (style) {
+        style.value =
+            settings.response_style;
+    }
+
+    if (autoRead) {
+        autoRead.checked =
+            settings.autoRead;
+    }
+
+
+    mettreAJourModeUI();
+}
+
+
+function sauvegarderParametres() {
+
+    const mode =
+        document.getElementById(
+            "setting-mode"
+        );
+
+    const personality =
+        document.getElementById(
+            "setting-personality"
+        );
+
+    const style =
+        document.getElementById(
+            "setting-style"
+        );
+
+    const autoRead =
+        document.getElementById(
+            "voice-auto-read"
+        );
+
+
+    if (mode) {
+        settings.mode =
+            mode.value;
+    }
+
+    if (personality) {
+        settings.personality =
+            personality.value;
+    }
+
+    if (style) {
+        settings.response_style =
+            style.value;
+    }
+
+    if (autoRead) {
+        settings.autoRead =
+            autoRead.checked;
+    }
+
+
+    localStorage.setItem(
+        SETTINGS_KEY,
+        JSON.stringify(settings)
+    );
+
+
+    mettreAJourModeUI();
+}
+
+
+function mettreAJourModeUI() {
+
+    const label =
+        document.getElementById(
+            "current-mode-label"
+        );
+
+    if (!label) return;
+
+
+    const names = {
+        normal: "Normal",
+        professeur: "Professeur",
+        developpeur: "Développeur",
+        gamer: "Gamer",
+        creatif: "Créatif",
+        nox: "Nox"
+    };
+
+
+    label.textContent =
+        `Mode ${names[settings.mode] || "Normal"}`;
+}
+
+
+// ======================================================
+// THÈME
+// ======================================================
+
+function appliquerTheme() {
+
+    const theme =
+        localStorage.getItem(
+            THEME_KEY
+        ) ||
+        "dark";
+
+
+    document.body.classList.toggle(
+        "light",
+        theme === "light"
+    );
+
+
+    const button =
+        document.getElementById(
+            "theme-toggle"
+        );
+
+
+    if (button) {
+
+        button.textContent =
+            theme === "light"
+                ? "☀"
+                : "☾";
+    }
+}
+
+
+function basculerTheme() {
+
+    const current =
+        localStorage.getItem(
+            THEME_KEY
+        ) ||
+        "dark";
+
+
+    const next =
+        current === "dark"
+            ? "light"
+            : "dark";
+
+
+    localStorage.setItem(
+        THEME_KEY,
+        next
+    );
+
+
+    appliquerTheme();
+}
+
+
+appliquerTheme();
+
+chargerParametresUI();
+
+
+// ======================================================
+// NOTIFICATIONS
+// ======================================================
+
+function afficherNotifications() {
+
+    afficherNotification(
+        "🔔 BourNox.AI fonctionne normalement."
     );
 }
 
 
 // ======================================================
-// BOUTONS QUICK
-// ======================================================
-
-document
-    .querySelectorAll(".quick button")
-    .forEach(button => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                const text =
-                    button.textContent.toLowerCase();
-
-
-                if (
-                    text.includes("devoirs")
-                ) {
-
-                    envoyer(
-                        "Aide-moi à faire mes devoirs."
-                    );
-
-
-                } else if (
-                    text.includes("internet")
-                ) {
-
-                    demanderInternet();
-
-
-                } else if (
-                    text.includes("image")
-                ) {
-
-                    ouvrirCreateurImage();
-                }
-            }
-        );
-    });
-
-
-// ======================================================
-// SIDEBAR
-// ======================================================
-
-document
-    .querySelectorAll(".sidebar nav button")
-    .forEach(button => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                document
-                    .querySelectorAll(
-                        ".sidebar nav button"
-                    )
-                    .forEach(btn => {
-
-                        btn.classList.remove(
-                            "active"
-                        );
-                    });
-
-
-                button.classList.add(
-                    "active"
-                );
-
-
-                const text =
-                    button.textContent.toLowerCase();
-
-
-                if (
-                    text.includes("accueil") ||
-                    text.includes("chat")
-                ) {
-
-                    allerChat();
-
-
-                } else if (
-                    text.includes("mémoire")
-                ) {
-
-                    demanderMemoire();
-
-
-                } else if (
-                    text.includes("outils")
-                ) {
-
-                    afficherOutils();
-
-
-                } else if (
-                    text.includes("internet")
-                ) {
-
-                    demanderInternet();
-
-
-                } else if (
-                    text.includes("voix")
-                ) {
-
-                    afficherVoix();
-
-
-                } else if (
-                    text.includes("paramètres")
-                ) {
-
-                    afficherParametres();
-                }
-            }
-        );
-    });
-
-
-// ======================================================
-// RACCOURCIS DE LA RIGHTBAR
-// ======================================================
-
-document
-    .querySelectorAll(
-        ".rightbar .grid button"
-    )
-    .forEach(button => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                const text =
-                    button.textContent.toLowerCase();
-
-
-                if (
-                    text.includes("devoirs")
-                ) {
-
-                    envoyer(
-                        "Aide-moi avec mes devoirs."
-                    );
-
-
-                } else if (
-                    text.includes("internet")
-                ) {
-
-                    demanderInternet();
-
-
-                } else if (
-                    text.includes("images")
-                ) {
-
-                    ouvrirCreateurImage();
-
-
-                } else if (
-                    text.includes("voix")
-                ) {
-
-                    afficherVoix();
-                }
-            }
-        );
-    });
-
-
-// ======================================================
-// RACCOURCI CLAVIER CTRL + K
+// RACCOURCIS CLAVIER
 // ======================================================
 
 document.addEventListener(
@@ -1324,18 +2764,80 @@ document.addEventListener(
 
             event.preventDefault();
 
-            if (input) {
-                input.focus();
-            }
+            ouvrirVue("chat");
+
+            input?.focus();
+        }
+
+
+        if (
+            event.key === "Escape"
+        ) {
+
+            document
+                .querySelectorAll(
+                    ".modal-overlay.open"
+                )
+                .forEach(
+                    modal =>
+                        modal.classList.remove(
+                            "open"
+                        )
+                );
         }
     }
 );
 
 
 // ======================================================
-// MESSAGE DE DÉMARRAGE V2
+// MODALE
 // ======================================================
 
-console.log(
-    "🚀 BourNox.AI V2 démarré avec succès."
+document.addEventListener(
+    "click",
+    event => {
+
+        if (
+            event.target.classList.contains(
+                "modal-overlay"
+            )
+        ) {
+
+            event.target.classList.remove(
+                "open"
+            );
+        }
+    }
+);
+
+
+// ======================================================
+// PROJET ACTIF
+// ======================================================
+
+window.bournoxProject =
+    localStorage.getItem(
+        "bournox_project"
+    ) ||
+    "";
+
+
+// ======================================================
+// INITIALISATION
+// ======================================================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        chargerCompte();
+
+        chargerMemoire();
+
+        mettreAJourModeUI();
+
+        console.log(
+            "🚀 BourNox.AI V2.0 initialisé."
+        );
+    }
 );
