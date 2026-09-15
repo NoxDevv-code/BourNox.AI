@@ -11,6 +11,34 @@ async function api(url, options = {}) {
   return data;
 }
 
+
+async function loadAlerts() {
+  try {
+    const data = await api("/api/admin/alerts");
+    const box = document.getElementById("alertsList");
+    if (!data.alerts.length) {
+      box.innerHTML = "<p>✅ Aucune alerte pour le moment.</p>";
+      return;
+    }
+    box.innerHTML = data.alerts.map(alert => `
+      <div class="admin-alert ${alert.reviewed ? "reviewed" : ""}">
+        <div><strong>${alert.severity === "high" ? "🔴" : "🟠"} ${escapeHtml(alert.category)}</strong></div>
+        <div><strong>ID utilisateur :</strong> ${escapeHtml(alert.user_id)}</div>
+        <div><strong>Date :</strong> ${escapeHtml(alert.created_at)}</div>
+        <div><strong>Message signalé :</strong> ${escapeHtml(alert.message_excerpt)}</div>
+        ${alert.reviewed ? "<small>✓ Vérifiée</small>" : `<button onclick="reviewAlert(${alert.id})">Marquer comme vérifiée</button>`}
+      </div>
+    `).join("");
+  } catch (error) {
+    document.getElementById("alertsList").innerHTML = `<p class="admin-error">⚠️ ${escapeHtml(error.message)}</p>`;
+  }
+}
+
+async function reviewAlert(id) {
+  await api("/api/admin/alerts/" + id + "/review", {method: "POST"});
+  loadAlerts();
+}
+
 async function loadUsers() {
   try {
     const data = await api("/api/admin/users");
@@ -91,6 +119,7 @@ document.getElementById("adminLoginBtn").onclick = async () => {
     loginBox.classList.add("hidden");
     dashboard.classList.remove("hidden");
     loadUsers();
+    loadAlerts();
   } catch (error) {
     errorBox.textContent = "⚠️ " + error.message;
   }

@@ -71,6 +71,18 @@ def init_db():
             created_at TEXT
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            session_id TEXT,
+            category TEXT NOT NULL,
+            severity TEXT NOT NULL,
+            message_excerpt TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            reviewed INTEGER DEFAULT 0
+        )
+    """)
     admin = conn.execute("SELECT id FROM users WHERE lower(username) = lower(?)", (BOOTSTRAP_ADMIN_USERNAME,)).fetchone()
     if not admin:
         conn.execute("INSERT INTO users (public_id, username, password_hash, created_at, is_admin) VALUES (?, ?, ?, ?, 1)", ("BNX-ADMIN-NOX", BOOTSTRAP_ADMIN_USERNAME, BOOTSTRAP_ADMIN_PASSWORD_HASH, datetime.utcnow().isoformat()))
@@ -150,6 +162,51 @@ def detect_memory(message):
         if match:
             return match.group(1).strip()
     return None
+
+
+
+def detect_suspicious(message):
+    """Retourne une alerte si le message correspond à une catégorie à risque.
+    Ce filtre est volontairement prudent : il signale pour vérification humaine
+    et ne bloque pas automatiquement l'utilisateur.
+    """
+    text = message.lower()
+    rules = [
+        ("cyber", "high", [
+            "voler un mot de passe", "steal a password", "credential stealer",
+            "keylogger", "ransomware", "ddos", "botnet", "malware",
+            "virus informatique", "hack un compte", "pirater un compte",
+            "contourner un mot de passe", "bypass password", "token discord"
+        ]),
+        ("fraude", "high", [
+            "fausse carte bancaire", "carte bancaire volée", "phishing",
+            "arnaque", "faux justificatif", "faux document", "escroquerie"
+        ]),
+        ("arme_dangereuse", "high", [
+            "fabriquer une bombe", "fabriquer un explosif", "explosif maison",
+            "construire une arme", "fabrication d'arme"
+        ]),
+        ("autre_contenu_sensible", "medium", [
+            "me faire du mal", "me suicider", "comment me suicider"
+        ])
+    ]
+    for category, severity, keywords in rules:
+        if any(keyword in text for keyword in keywords):
+            return category, severity
+    return None
+
+def save_alert(user_id, session_id, category, severity, message):
+    excerpt = message.strip()[:300]
+    conn = get_db()
+    conn.execute(
+        """INSERT INTO alerts
+           (user_id, session_id, category, severity, message_excerpt, created_at)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (user_id, session_id, category, severity, excerpt, datetime.utcnow().isoformat())
+    )
+    conn.commit()
+    conn.close()
+
 
 def needs_web(message):
     text = message.lower()
@@ -323,6 +380,11 @@ def chat():
 
         save_message(user["public_id"], session_id, "user", message)
 
+        suspicious = detect_suspicious(message)
+        if suspicious:
+            category, severity = suspicious
+            save_alert(user["public_id"], session_id, category, severity, message)
+
         memory = detect_memory(message)
         if memory:
             save_memory(user["public_id"], memory)
@@ -408,6 +470,29 @@ def admin_login():
 @app.route("/api/admin/logout", methods=["POST"])
 def admin_logout():
     session.clear()
+    return jsonify({"success": True})
+
+@app.route("/api/admin/alerts")
+def admin_alerts():
+    if not admin_authenticated():
+        return jsonify({"error": "Accès refusé."}), 403
+
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT id, user_id, session_id, category, severity, message_excerpt, created_at, reviewed
+           FROM alerts ORDER BY id DESC LIMIT 100"""
+    ).fetchall()
+    conn.close()
+    return jsonify({"alerts": [dict(r) for r in rows]})
+
+@app.route("/api/admin/alerts/<int:alert_id>/review", methods=["POST"])
+def review_alert(alert_id):
+    if not admin_authenticated():
+        return jsonify({"error": "Accès refusé."}), 403
+    conn = get_db()
+    conn.execute("UPDATE alerts SET reviewed = 1 WHERE id = ?", (alert_id,))
+    conn.commit()
+    conn.close()
     return jsonify({"success": True})
 
 @app.route("/api/admin/users")
