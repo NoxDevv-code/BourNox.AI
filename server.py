@@ -56,9 +56,8 @@ Tu aides l'utilisateur pour :
 
 Tu ne prétends jamais être une personne réelle.
 
-Quand l'utilisateur demande une image, indique que BourNox
-peut utiliser son générateur d'images si la demande passe
-par la fonction de génération d'image du site.
+Quand l'utilisateur demande une image, utilise la fonction
+de génération d'image du site lorsqu'elle est disponible.
 """
 
 
@@ -107,6 +106,7 @@ init_db()
 # =========================================================
 
 def save_message(user_id, session_id, role, content):
+
     conn = get_db()
 
     conn.execute(
@@ -128,7 +128,12 @@ def save_message(user_id, session_id, role, content):
     conn.close()
 
 
-def get_recent_messages(user_id, session_id, limit=12):
+def get_recent_messages(
+    user_id,
+    session_id,
+    limit=12
+):
+
     conn = get_db()
 
     rows = conn.execute(
@@ -140,7 +145,11 @@ def get_recent_messages(user_id, session_id, limit=12):
         ORDER BY id DESC
         LIMIT ?
         """,
-        (user_id, session_id, limit)
+        (
+            user_id,
+            session_id,
+            limit
+        )
     ).fetchall()
 
     conn.close()
@@ -161,6 +170,7 @@ def get_recent_messages(user_id, session_id, limit=12):
 # =========================================================
 
 def save_memory(user_id, content):
+
     conn = get_db()
 
     conn.execute(
@@ -181,6 +191,7 @@ def save_memory(user_id, content):
 
 
 def get_memories(user_id):
+
     conn = get_db()
 
     rows = conn.execute(
@@ -196,67 +207,108 @@ def get_memories(user_id):
 
     conn.close()
 
-    return [row["content"] for row in rows]
+    return [
+        row["content"]
+        for row in rows
+    ]
 
 
 def detect_memory(message):
+
     text = message.strip()
 
     patterns = [
+
         r"^souviens[- ]toi que (.+)$",
+
         r"^rappelle[- ]toi que (.+)$",
+
         r"^mémorise que (.+)$",
+
         r"^remember that (.+)$",
+
         r"^je m'appelle (.+)$",
+
         r"^mon prénom est (.+)$",
+
         r"^j'aime (.+)$",
+
         r"^je préfère (.+)$"
+
     ]
 
     for pattern in patterns:
-        match = re.match(pattern, text, re.IGNORECASE)
+
+        match = re.match(
+            pattern,
+            text,
+            re.IGNORECASE
+        )
 
         if match:
+
             return match.group(1).strip()
 
     return None
 
 
 # =========================================================
-# WEB
+# INTERNET
 # =========================================================
 
 def needs_web(message):
+
     text = message.lower()
 
     keywords = [
+
         "actualité",
         "actualités",
+
         "aujourd'hui",
         "aujourd’hui",
+
         "maintenant",
+
         "récent",
         "récente",
+
         "dernière",
         "dernier",
+
         "news",
+
         "internet",
+
         "cherche sur le web",
+
         "recherche sur internet",
+
         "prix actuel",
+
         "météo"
+
     ]
 
-    return any(keyword in text for keyword in keywords)
+    return any(
+        keyword in text
+        for keyword in keywords
+    )
 
 
 # =========================================================
 # IA TEXTE
 # =========================================================
 
-def ask_ai(message, user_id, session_id):
+def ask_ai(
+    message,
+    user_id,
+    session_id
+):
 
-    memories = get_memories(user_id)
+    memories = get_memories(
+        user_id
+    )
 
     recent_messages = get_recent_messages(
         user_id,
@@ -266,15 +318,21 @@ def ask_ai(message, user_id, session_id):
     memory_text = ""
 
     if memories:
+
         memory_text = (
-            "\n\nVoici des informations mémorisées sur "
-            "l'utilisateur :\n"
-            + "\n".join(f"- {m}" for m in memories)
+            "\n\nVoici des informations "
+            "mémorisées sur l'utilisateur :\n"
+            +
+            "\n".join(
+                f"- {memory}"
+                for memory in memories
+            )
         )
 
     input_text = []
 
     for item in recent_messages:
+
         input_text.append({
             "role": item["role"],
             "content": item["content"]
@@ -286,17 +344,31 @@ def ask_ai(message, user_id, session_id):
     })
 
     kwargs = {
+
         "model": MODEL,
-        "instructions": SYSTEM_PROMPT + memory_text,
+
+        "instructions":
+            SYSTEM_PROMPT +
+            memory_text,
+
         "input": input_text
     }
+
+
+    # =====================================================
+    # RECHERCHE INTERNET
+    # =====================================================
 
     if needs_web(message):
 
         try:
+
             web_kwargs = dict(kwargs)
+
             web_kwargs["tools"] = [
-                {"type": "web_search"}
+                {
+                    "type": "web_search"
+                }
             ]
 
             response = client.responses.create(
@@ -305,8 +377,17 @@ def ask_ai(message, user_id, session_id):
 
             return response.output_text
 
-        except Exception:
-            pass
+        except Exception as error:
+
+            print(
+                "ERREUR WEB :",
+                error
+            )
+
+
+    # =====================================================
+    # CHAT NORMAL
+    # =====================================================
 
     response = client.responses.create(
         **kwargs
@@ -321,33 +402,48 @@ def ask_ai(message, user_id, session_id):
 
 def generate_image(prompt):
 
-    response = client.responses.create(
-        model=MODEL,
-        input=prompt,
-        tools=[
-            {
-                "type": "image_generation"
-            }
-        ]
+    print(
+        "🎨 Demande d'image :",
+        prompt
     )
 
-    image_data = None
+    response = client.images.generate(
 
-    for item in response.output:
+        model="gpt-image-2",
 
-        if getattr(item, "type", None) == "image_generation_call":
+        prompt=prompt,
 
-            image_data = getattr(item, "result", None)
+        size="1024x1024"
+    )
 
-            if image_data:
-                break
 
-    if not image_data:
+    if not response.data:
+
         raise RuntimeError(
-            "Le générateur n'a pas retourné d'image."
+            "Le générateur n'a retourné aucune donnée."
         )
 
-    return image_data
+
+    image_data = response.data[0]
+
+
+    if not getattr(
+        image_data,
+        "b64_json",
+        None
+    ):
+
+        raise RuntimeError(
+            "L'API n'a pas retourné l'image en base64."
+        )
+
+
+    print(
+        "✅ Image générée avec succès."
+    )
+
+
+    return image_data.b64_json
 
 
 # =========================================================
@@ -356,45 +452,71 @@ def generate_image(prompt):
 
 @app.route("/")
 def accueil():
-    return send_from_directory(".", "index.html")
+
+    return send_from_directory(
+        ".",
+        "index.html"
+    )
 
 
 # =========================================================
 # CHAT
 # =========================================================
 
-@app.route("/chat", methods=["POST"])
+@app.route(
+    "/chat",
+    methods=["POST"]
+)
 def chat():
 
     try:
 
         data = request.get_json() or {}
 
-        message = data.get("message", "").strip()
+        message = data.get(
+            "message",
+            ""
+        ).strip()
+
 
         user_id = data.get(
             "user_id",
             "local-user"
         )
 
+
         session_id = data.get(
             "session_id",
             str(uuid.uuid4())
         )
 
+
         if not message:
+
             return jsonify({
-                "response": "Écris-moi quelque chose 😎"
+
+                "response":
+                    "Écris-moi quelque chose 😎"
+
             }), 400
 
+
         save_message(
+
             user_id,
+
             session_id,
+
             "user",
+
             message
         )
 
-        memory = detect_memory(message)
+
+        memory = detect_memory(
+            message
+        )
+
 
         if memory:
 
@@ -403,33 +525,55 @@ def chat():
                 memory
             )
 
+
         response = ask_ai(
+
             message,
+
             user_id,
+
             session_id
         )
 
+
         save_message(
+
             user_id,
+
             session_id,
+
             "assistant",
+
             response
         )
 
+
         return jsonify({
-            "response": response,
-            "session_id": session_id
+
+            "response":
+                response,
+
+            "session_id":
+                session_id
+
         })
 
-    except Exception as e:
 
-        print("ERREUR CHAT :", e)
+    except Exception as error:
+
+        print(
+            "ERREUR CHAT :",
+            error
+        )
+
 
         return jsonify({
-            "response": (
-                "⚠️ Le cerveau BourNox a rencontré "
-                "une erreur : " + str(e)
-            )
+
+            "response":
+                "⚠️ Le cerveau BourNox "
+                "a rencontré une erreur : "
+                + str(error)
+
         }), 500
 
 
@@ -437,42 +581,68 @@ def chat():
 # GÉNÉRATION D'IMAGE
 # =========================================================
 
-@app.route("/generate-image", methods=["POST"])
+@app.route(
+    "/generate-image",
+    methods=["POST"]
+)
 def generate_image_route():
 
     try:
 
         data = request.get_json() or {}
 
-        prompt = data.get("prompt", "").strip()
+        prompt = data.get(
+            "prompt",
+            ""
+        ).strip()
+
 
         if not prompt:
 
             return jsonify({
-                "error": "Décris l'image que tu veux créer."
+
+                "error":
+                    "Décris l'image que tu veux créer."
+
             }), 400
+
 
         print(
             "🎨 Génération d'image :",
             prompt
         )
 
-        image_base64 = generate_image(prompt)
+
+        image_base64 = generate_image(
+            prompt
+        )
+
 
         return jsonify({
-            "image": image_base64,
-            "format": "png"
+
+            "image":
+                image_base64,
+
+            "format":
+                "png"
+
         })
 
-    except Exception as e:
 
-        print("ERREUR IMAGE :", e)
+    except Exception as error:
+
+        print(
+            "ERREUR IMAGE :",
+            error
+        )
+
 
         return jsonify({
-            "error": (
+
+            "error":
                 "Impossible de générer l'image : "
-                + str(e)
-            )
+                + str(error)
+
         }), 500
 
 
@@ -480,7 +650,10 @@ def generate_image_route():
 # HISTORIQUE
 # =========================================================
 
-@app.route("/history", methods=["GET"])
+@app.route(
+    "/history",
+    methods=["GET"]
+)
 def history():
 
     user_id = request.args.get(
@@ -488,27 +661,40 @@ def history():
         "local-user"
     )
 
+
     session_id = request.args.get(
         "session_id"
     )
 
+
     if not session_id:
+
         return jsonify([])
 
+
     messages = get_recent_messages(
+
         user_id,
+
         session_id,
+
         100
     )
 
-    return jsonify(messages)
+
+    return jsonify(
+        messages
+    )
 
 
 # =========================================================
 # MÉMOIRE
 # =========================================================
 
-@app.route("/memory", methods=["GET"])
+@app.route(
+    "/memory",
+    methods=["GET"]
+)
 def memory_get():
 
     user_id = request.args.get(
@@ -516,39 +702,59 @@ def memory_get():
         "local-user"
     )
 
+
     return jsonify({
-        "memories": get_memories(user_id)
+
+        "memories":
+            get_memories(user_id)
+
     })
 
 
-@app.route("/memory", methods=["POST"])
+@app.route(
+    "/memory",
+    methods=["POST"]
+)
 def memory_post():
 
     data = request.get_json() or {}
+
 
     user_id = data.get(
         "user_id",
         "local-user"
     )
 
+
     content = data.get(
         "content",
         ""
     ).strip()
 
+
     if not content:
 
         return jsonify({
-            "error": "Mémoire vide."
+
+            "error":
+                "Mémoire vide."
+
         }), 400
 
+
     save_memory(
+
         user_id,
+
         content
     )
 
+
     return jsonify({
-        "success": True
+
+        "success":
+            True
+
     })
 
 
@@ -560,9 +766,16 @@ def memory_post():
 def health():
 
     return jsonify({
-        "status": "online",
-        "name": "BourNox.AI",
-        "model": MODEL
+
+        "status":
+            "online",
+
+        "name":
+            "BourNox.AI",
+
+        "model":
+            MODEL
+
     })
 
 
@@ -573,12 +786,15 @@ def health():
 if __name__ == "__main__":
 
     app.run(
+
         host="0.0.0.0",
+
         port=int(
             os.environ.get(
                 "PORT",
                 5000
             )
         ),
+
         debug=False
     )
