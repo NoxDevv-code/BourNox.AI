@@ -1,9 +1,15 @@
+// ======================================================
+// BourNox.AI V2
+// Script principal
+// ======================================================
+
 const input = document.getElementById("msg");
 const send = document.getElementById("send");
 const chat = document.querySelector(".chat");
 const composer = document.querySelector(".composer");
 
 const SESSION_KEY = "bournox_session_id";
+
 let sessionId = localStorage.getItem(SESSION_KEY);
 
 if (!sessionId) {
@@ -12,309 +18,341 @@ if (!sessionId) {
 }
 
 
-/* =========================================================
-   COMPTE
-========================================================= */
+// ======================================================
+// COMPTE
+// ======================================================
 
 async function chargerCompte() {
-    const response = await fetch("/api/me");
+    try {
+        const response = await fetch("/api/me");
 
-    if (!response.ok) {
-        window.location.href = "/login";
+        if (!response.ok) {
+            window.location.href = "/login";
+            return null;
+        }
+
+        return await response.json();
+
+    } catch (error) {
+        console.error("Erreur compte :", error);
         return null;
     }
-
-    return await response.json();
 }
 
-chargerCompte().then(data => {
-    if (data?.user) {
-        const avatar = document.querySelector(".avatar");
 
-        if (avatar) {
-            avatar.textContent =
-                data.user.username.slice(0, 2).toUpperCase();
-        }
+chargerCompte().then(data => {
+
+    if (!data?.user) return;
+
+    const avatar = document.querySelector(".avatar");
+
+    if (avatar) {
+        avatar.textContent = data.user.username
+            .slice(0, 2)
+            .toUpperCase();
     }
 });
 
+
+// ======================================================
+// DÉCONNEXION
+// ======================================================
+
 async function deconnexion() {
-    await fetch("/api/logout", {
-        method: "POST"
-    });
+
+    try {
+        await fetch("/api/logout", {
+            method: "POST"
+        });
+    } catch (error) {
+        console.error("Erreur déconnexion :", error);
+    }
 
     localStorage.removeItem(SESSION_KEY);
+
     window.location.href = "/login";
 }
 
 
-/* =========================================================
-   UTILITAIRES CODE
-========================================================= */
+// ======================================================
+// UTILITAIRES
+// ======================================================
 
 function escapeHTML(text) {
+
     const div = document.createElement("div");
+
     div.textContent = text;
+
     return div.innerHTML;
 }
 
-function detecterLangage(code, langage = "") {
-    langage = langage.toLowerCase().trim();
 
-    if (langage) {
-        const correspondances = {
-            js: "JavaScript",
-            javascript: "JavaScript",
-            jsx: "JSX",
-            ts: "TypeScript",
-            typescript: "TypeScript",
-            py: "Python",
-            python: "Python",
-            html: "HTML",
-            css: "CSS",
-            json: "JSON",
-            java: "Java",
-            c: "C",
-            cpp: "C++",
-            "c++": "C++",
-            cs: "C#",
-            "c#": "C#",
-            php: "PHP",
-            sql: "SQL",
-            bash: "Bash",
-            sh: "Bash",
-            shell: "Bash",
-            xml: "XML",
-            yaml: "YAML",
-            yml: "YAML",
-            markdown: "Markdown",
-            md: "Markdown"
-        };
+function scrollChat() {
 
-        return correspondances[langage] || langage;
-    }
+    if (!chat) return;
 
-    if (/^\s*(def |import |from |print\(|class )/m.test(code)) {
+    chat.scrollTop = chat.scrollHeight;
+}
+
+
+// ======================================================
+// DÉTECTION DU LANGAGE
+// ======================================================
+
+function detecterLangage(code) {
+
+    if (
+        /\b(def|import|print|class|self|elif)\b/.test(code)
+    ) {
         return "Python";
     }
 
-    if (/^\s*(const |let |var |function |console\.log)/m.test(code)) {
+    if (
+        /\b(const|let|var|function|console\.log|document\.)\b/.test(code)
+    ) {
         return "JavaScript";
     }
 
-    if (/<(!DOCTYPE|html|head|body|div|script|style)/i.test(code)) {
+    if (
+        /<!DOCTYPE html>|<html|<body|<div|<section|<header/i.test(code)
+    ) {
         return "HTML";
     }
 
-    if (/[.#][a-zA-Z0-9_-]+\s*\{[\s\S]*\}/.test(code)) {
+    if (
+        /\b(color|background|margin|padding|display|font-size)\s*:/.test(code)
+    ) {
         return "CSS";
     }
 
-    if (/^\s*\{[\s\S]*\}\s*$/m.test(code)) {
-        return "JSON";
+    if (
+        /\bSELECT\b|\bINSERT\b|\bUPDATE\b|\bDELETE\b/i.test(code)
+    ) {
+        return "SQL";
     }
 
-    if (/^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE TABLE)\b/im.test(code)) {
-        return "SQL";
+    if (
+        /\b(public|private|static|void|System\.out)\b/.test(code)
+    ) {
+        return "Java";
+    }
+
+    if (
+        /#include\s*<|std::/.test(code)
+    ) {
+        return "C++";
     }
 
     return "Code";
 }
 
 
-/* =========================================================
-   COLORATION SIMPLE DU CODE
-========================================================= */
+// ======================================================
+// COLORATION CODE
+// ======================================================
 
 function coloriserCode(code, langage) {
-    let html = escapeHTML(code);
 
-    const lang = langage.toLowerCase();
+    let result = escapeHTML(code);
 
-    /*
-       On applique uniquement une coloration légère.
-       Le but est de rester compatible avec tous les navigateurs
-       sans ajouter une bibliothèque externe.
-    */
+    // chaînes de caractères
+    result = result.replace(
+        /(["'`])(?:\\.|(?!\1).)*?\1/g,
+        '<span class="code-value">$&</span>'
+    );
 
-    if (
-        lang.includes("javascript") ||
-        lang.includes("typescript") ||
-        lang === "js" ||
-        lang === "ts"
-    ) {
-        html = html
-            .replace(
-                /\b(const|let|var|function|return|if|else|for|while|class|new|async|await|import|from|export)\b/g,
-                '<span class="code-keyword">$1</span>'
-            )
-            .replace(
-                /\b(true|false|null|undefined)\b/g,
-                '<span class="code-value">$1</span>'
-            );
-    }
+    // mots-clés
+    result = result.replace(
+        /\b(def|class|import|from|return|if|else|elif|for|while|in|True|False|None|const|let|var|function|new|async|await|public|private|static|void|SELECT|FROM|WHERE|INSERT|UPDATE|DELETE)\b/g,
+        '<span class="code-keyword">$1</span>'
+    );
 
-    else if (lang.includes("python")) {
-        html = html
-            .replace(
-                /\b(def|return|if|else|elif|for|while|in|import|from|class|try|except|with|as|True|False|None)\b/g,
-                '<span class="code-keyword">$1</span>'
-            )
-            .replace(
-                /\b(print|len|str|int|float|list|dict|range|input)\b/g,
-                '<span class="code-function">$1</span>'
-            );
-    }
+    // fonctions
+    result = result.replace(
+        /\b([a-zA-Z_$][\w$]*)\s*(?=\()/g,
+        '<span class="code-function">$1</span>'
+    );
 
-    else if (
-        lang.includes("html") ||
-        lang.includes("xml")
-    ) {
-        html = html.replace(
-            /(&lt;\/?)([a-zA-Z0-9-]+)/g,
+    // HTML
+    if (langage === "HTML") {
+
+        result = result.replace(
+            /(&lt;\/?)([\w-]+)/g,
             '$1<span class="code-tag">$2</span>'
         );
     }
 
-    else if (lang.includes("css")) {
-        html = html
-            .replace(
-                /([a-zA-Z-]+)(\s*:)/g,
-                '<span class="code-property">$1</span>$2'
-            );
-    }
-
-    return html;
+    return result;
 }
 
 
-/* =========================================================
-   CRÉATION D'UN BLOC DE CODE
-========================================================= */
+// ======================================================
+// CRÉATION D'UN BLOC DE CODE
+// ======================================================
 
-function creerBlocCode(code, langage = "") {
-    const container = document.createElement("div");
-    container.className = "bournox-code";
+function creerBlocCode(code, langage) {
 
-    const nomLangage = detecterLangage(code, langage);
+    const wrapper = document.createElement("div");
 
+    wrapper.className = "bournox-code";
+
+
+    // HEADER
     const header = document.createElement("div");
+
     header.className = "code-header";
 
-    const languageName = document.createElement("span");
-    languageName.className = "code-language";
-    languageName.textContent = nomLangage;
+
+    const language = document.createElement("span");
+
+    language.className = "code-language";
+
+    language.textContent = langage;
+
 
     const actions = document.createElement("div");
+
     actions.className = "code-actions";
 
+
+    // BOUTON COPIER
     const copyButton = document.createElement("button");
+
     copyButton.className = "code-action";
-    copyButton.type = "button";
+
     copyButton.textContent = "📋 Copier";
 
+
+    // BOUTON TÉLÉCHARGER
     const downloadButton = document.createElement("button");
+
     downloadButton.className = "code-action";
-    downloadButton.type = "button";
-    downloadButton.textContent = "📥 Télécharger";
+
+    downloadButton.textContent = "⬇️ Télécharger";
+
 
     actions.appendChild(copyButton);
     actions.appendChild(downloadButton);
 
-    header.appendChild(languageName);
+    header.appendChild(language);
     header.appendChild(actions);
 
 
+    // CONTENU
     const codeWrapper = document.createElement("div");
+
     codeWrapper.className = "code-wrapper";
 
 
     const lineNumbers = document.createElement("div");
+
     lineNumbers.className = "code-line-numbers";
-
-    const lignes = code.split("\n");
-
-    lignes.forEach((ligne, index) => {
-        const lineNumber = document.createElement("span");
-        lineNumber.textContent = index + 1;
-        lineNumbers.appendChild(lineNumber);
-    });
 
 
     const codeContent = document.createElement("pre");
+
     codeContent.className = "code-content";
 
-    const codeElement = document.createElement("code");
 
-    codeElement.innerHTML = coloriserCode(
-        code,
-        nomLangage
-    );
+    const lines = code.split("\n");
 
-    codeContent.appendChild(codeElement);
+
+    lineNumbers.innerHTML = lines
+        .map((_, index) => index + 1)
+        .join("<br>");
+
+
+    codeContent.innerHTML =
+        coloriserCode(code, langage);
 
 
     codeWrapper.appendChild(lineNumbers);
     codeWrapper.appendChild(codeContent);
 
 
-    container.appendChild(header);
-    container.appendChild(codeWrapper);
+    wrapper.appendChild(header);
+    wrapper.appendChild(codeWrapper);
 
 
-    /* COPIER */
+    // ==================================================
+    // COPIER
+    // ==================================================
 
     copyButton.addEventListener("click", async () => {
+
         try {
+
             await navigator.clipboard.writeText(code);
 
             copyButton.textContent = "✅ Copié !";
+
             copyButton.classList.add("copied");
 
+
             setTimeout(() => {
+
                 copyButton.textContent = "📋 Copier";
+
                 copyButton.classList.remove("copied");
+
             }, 1500);
 
+
         } catch (error) {
+
             copyButton.textContent = "❌ Erreur";
 
+
             setTimeout(() => {
+
                 copyButton.textContent = "📋 Copier";
+
             }, 1500);
         }
     });
 
 
-    /* TÉLÉCHARGER */
+    // ==================================================
+    // TÉLÉCHARGEMENT
+    // ==================================================
 
     downloadButton.addEventListener("click", () => {
 
         let extension = "txt";
 
-        const extensions = {
-            python: "py",
-            javascript: "js",
-            typescript: "ts",
-            html: "html",
-            css: "css",
-            json: "json",
-            java: "java",
-            "c++": "cpp",
-            "c#": "cs",
-            php: "php",
-            sql: "sql",
-            bash: "sh",
-            xml: "xml",
-            yaml: "yml",
-            markdown: "md"
-        };
 
-        const key = nomLangage.toLowerCase();
+        switch (langage.toLowerCase()) {
 
-        if (extensions[key]) {
-            extension = extensions[key];
+            case "python":
+                extension = "py";
+                break;
+
+            case "javascript":
+                extension = "js";
+                break;
+
+            case "html":
+                extension = "html";
+                break;
+
+            case "css":
+                extension = "css";
+                break;
+
+            case "sql":
+                extension = "sql";
+                break;
+
+            case "java":
+                extension = "java";
+                break;
+
+            case "c++":
+                extension = "cpp";
+                break;
         }
+
 
         const blob = new Blob(
             [code],
@@ -323,125 +361,182 @@ function creerBlocCode(code, langage = "") {
             }
         );
 
-        const url = URL.createObjectURL(blob);
 
-        const link = document.createElement("a");
+        const url =
+            URL.createObjectURL(blob);
+
+
+        const link =
+            document.createElement("a");
+
 
         link.href = url;
-        link.download = `bournox-code.${extension}`;
+
+        link.download =
+            `bournox-code.${extension}`;
+
 
         document.body.appendChild(link);
+
         link.click();
+
         link.remove();
+
 
         URL.revokeObjectURL(url);
     });
+
+
+    return wrapper;
+}
+
+
+// ======================================================
+// AFFICHAGE MESSAGE AVEC CODE
+// ======================================================
+
+function afficherMessageFormate(message) {
+
+    const container =
+        document.createElement("div");
+
+    container.className = "message-text";
+
+
+    const regex =
+        /```(\w+)?\n?([\s\S]*?)```/g;
+
+
+    let dernierIndex = 0;
+
+    let match;
+
+
+    while (
+        (match = regex.exec(message)) !== null
+    ) {
+
+        // TEXTE AVANT LE CODE
+        const texteAvant =
+            message.slice(
+                dernierIndex,
+                match.index
+            );
+
+
+        if (texteAvant.trim()) {
+
+            const texte =
+                document.createElement("div");
+
+
+            texte.innerHTML =
+                escapeHTML(texteAvant)
+                    .replace(/\n/g, "<br>");
+
+
+            container.appendChild(texte);
+        }
+
+
+        // CODE
+        const code =
+            match[2].trim();
+
+
+        const langage =
+            match[1] ||
+            detecterLangage(code);
+
+
+        const bloc =
+            creerBlocCode(
+                code,
+                langage
+            );
+
+
+        container.appendChild(bloc);
+
+
+        dernierIndex =
+            regex.lastIndex;
+    }
+
+
+    // TEXTE APRÈS LE CODE
+    const texteFinal =
+        message.slice(dernierIndex);
+
+
+    if (texteFinal.trim()) {
+
+        const texte =
+            document.createElement("div");
+
+
+        texte.innerHTML =
+            escapeHTML(texteFinal)
+                .replace(/\n/g, "<br>");
+
+
+        container.appendChild(texte);
+    }
 
 
     return container;
 }
 
 
-/* =========================================================
-   AFFICHAGE D'UN MESSAGE AVEC CODE
-========================================================= */
-
-function afficherMessageFormate(parent, message) {
-
-    /*
-       Détection des blocs :
-
-       ```python
-       print("Salut")
-       ```
-
-       ou
-
-       ```
-       print("Salut")
-       ```
-    */
-
-    const regex = /```([a-zA-Z0-9+#_-]*)\n?([\s\S]*?)```/g;
-
-    let dernierIndex = 0;
-    let match;
-
-    while ((match = regex.exec(message)) !== null) {
-
-        const texteAvant = message.slice(
-            dernierIndex,
-            match.index
-        );
-
-        if (texteAvant.trim()) {
-            const textNode = document.createElement("div");
-            textNode.className = "message-text";
-            textNode.textContent = texteAvant;
-            parent.appendChild(textNode);
-        }
-
-        const langage = match[1];
-        const code = match[2].replace(/\n$/, "");
-
-        parent.appendChild(
-            creerBlocCode(code, langage)
-        );
-
-        dernierIndex = regex.lastIndex;
-    }
-
-
-    const texteApres = message.slice(dernierIndex);
-
-    if (texteApres.trim()) {
-        const textNode = document.createElement("div");
-        textNode.className = "message-text";
-        textNode.textContent = texteApres;
-        parent.appendChild(textNode);
-    }
-
-
-    /*
-       Si aucun bloc de code n'a été trouvé,
-       on affiche simplement le texte.
-    */
-
-    if (!message.includes("```")) {
-        parent.textContent = message;
-    }
-}
-
-
-/* =========================================================
-   MESSAGES
-========================================================= */
+// ======================================================
+// MESSAGE UTILISATEUR
+// ======================================================
 
 function ajouterMessageUser(message) {
 
-    const el = document.createElement("div");
+    const el =
+        document.createElement("div");
 
-    el.className = "message user";
 
-    el.textContent = message;
+    el.className =
+        "message user";
+
+
+    el.textContent =
+        message;
+
 
     chat.insertBefore(
         el,
         composer
     );
+
+
+    scrollChat();
 }
 
 
+// ======================================================
+// MESSAGE BOURNOX
+// ======================================================
+
 function ajouterMessageBot(message) {
 
-    const el = document.createElement("div");
+    const el =
+        document.createElement("div");
 
-    el.className = "message bot";
+
+    el.className =
+        "message bot";
 
 
-    const title = document.createElement("div");
+    const title =
+        document.createElement("div");
 
-    title.className = "bot-title";
+
+    title.className =
+        "bot-title";
+
 
     title.innerHTML = `
         <span class="mini-bn">BN</span>
@@ -450,37 +545,39 @@ function ajouterMessageBot(message) {
     `;
 
 
-    const body = document.createElement("div");
-
-    body.className = "bot-body";
-
-
-    afficherMessageFormate(
-        body,
-        message
-    );
-
-
     el.appendChild(title);
-    el.appendChild(body);
+
+
+    const contenu =
+        afficherMessageFormate(message);
+
+
+    el.appendChild(contenu);
+
 
     chat.insertBefore(
         el,
         composer
     );
+
+
+    scrollChat();
 }
 
 
-/* =========================================================
-   CHARGEMENT
-========================================================= */
+// ======================================================
+// CHARGEMENT
+// ======================================================
 
 function ajouterChargement() {
 
-    const el = document.createElement("div");
+    const el =
+        document.createElement("div");
+
 
     el.className =
         "message bot bournox-loading";
+
 
     el.innerHTML = `
         <div class="bot-title">
@@ -490,31 +587,34 @@ function ajouterChargement() {
         </div>
 
         <div class="thinking-animation">
-            <span></span>
-            <span></span>
-            <span></span>
-            <b>🧠 BourNox réfléchit...</b>
+            🧠 Je réfléchis...
         </div>
     `;
+
 
     chat.insertBefore(
         el,
         composer
     );
 
+
+    scrollChat();
+
+
     return el;
 }
 
 
-/* =========================================================
-   ENVOI MESSAGE
-========================================================= */
+// ======================================================
+// ENVOYER UN MESSAGE
+// ======================================================
 
 async function envoyer(messageForce = null) {
 
     const message =
         messageForce ||
         input.value.trim();
+
 
     if (
         !message ||
@@ -551,7 +651,8 @@ async function envoyer(messageForce = null) {
 
                     body: JSON.stringify({
                         message,
-                        session_id: sessionId
+                        session_id:
+                            sessionId
                     })
                 }
             );
@@ -566,27 +667,36 @@ async function envoyer(messageForce = null) {
         loading.remove();
 
 
-        if (response.status === 401) {
-            window.location.href = "/login";
+        // SESSION EXPIRÉE
+        if (
+            response.status === 401
+        ) {
+
+            window.location.href =
+                "/login";
+
             return;
         }
 
 
+        // ERREUR SERVEUR
         if (!response.ok) {
 
             ajouterMessageBot(
                 data.response ||
-                "⚠️ Erreur du serveur."
+                "⚠️ Erreur du serveur BourNox."
             );
 
             return;
         }
 
 
+        // NOUVELLE SESSION
         if (data.session_id) {
 
             sessionId =
                 data.session_id;
+
 
             localStorage.setItem(
                 SESSION_KEY,
@@ -595,26 +705,30 @@ async function envoyer(messageForce = null) {
         }
 
 
+        // RÉPONSE
         ajouterMessageBot(
             data.response ||
             "Je n'ai pas reçu de réponse."
         );
 
-    }
 
-    catch (error) {
+    } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Erreur BourNox :",
+            error
+        );
+
 
         loading.remove();
+
 
         ajouterMessageBot(
             "⚠️ Impossible de contacter le cerveau BourNox."
         );
 
-    }
 
-    finally {
+    } finally {
 
         send.disabled = false;
 
@@ -623,36 +737,42 @@ async function envoyer(messageForce = null) {
 }
 
 
-/* =========================================================
-   CLAVIER
-========================================================= */
+// ======================================================
+// ENVOI AVEC ENTRÉE
+// ======================================================
 
-send.addEventListener(
-    "click",
-    () => envoyer()
-);
+if (send) {
+
+    send.addEventListener(
+        "click",
+        () => envoyer()
+    );
+}
 
 
-input.addEventListener(
-    "keydown",
-    event => {
+if (input) {
 
-        if (
-            event.key === "Enter" &&
-            !event.shiftKey
-        ) {
+    input.addEventListener(
+        "keydown",
+        event => {
 
-            event.preventDefault();
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
 
-            envoyer();
+                event.preventDefault();
+
+                envoyer();
+            }
         }
-    }
-);
+    );
+}
 
 
-/* =========================================================
-   GÉNÉRATEUR D'IMAGE
-========================================================= */
+// ======================================================
+// GÉNÉRATEUR D'IMAGE
+// ======================================================
 
 function ouvrirCreateurImage() {
 
@@ -660,6 +780,7 @@ function ouvrirCreateurImage() {
         document.getElementById(
             "image-creator"
         );
+
 
     if (ancien) {
         ancien.remove();
@@ -669,10 +790,13 @@ function ouvrirCreateurImage() {
     const el =
         document.createElement("div");
 
-    el.id = "image-creator";
+
+    el.id =
+        "image-creator";
+
 
     el.className =
-        "message bot";
+        "message bot image-generator";
 
 
     el.innerHTML = `
@@ -683,9 +807,7 @@ function ouvrirCreateurImage() {
         </div>
 
         <div class="image-generator-title">
-            🎨 <strong>
-                Décris l'image que tu veux créer :
-            </strong>
+            🎨 Décris l'image que tu veux créer :
         </div>
 
         <textarea
@@ -726,10 +848,14 @@ function ouvrirCreateurImage() {
         const prompt =
             promptInput.value.trim();
 
+
         if (!prompt) {
+
             promptInput.focus();
+
             return;
         }
+
 
         el.remove();
 
@@ -748,6 +874,10 @@ function ouvrirCreateurImage() {
     promptInput.focus();
 }
 
+
+// ======================================================
+// GÉNÉRER IMAGE
+// ======================================================
 
 async function genererImage(prompt) {
 
@@ -808,11 +938,17 @@ async function genererImage(prompt) {
             data.image
         );
 
-    }
 
-    catch {
+    } catch (error) {
+
+        console.error(
+            "Erreur image :",
+            error
+        );
+
 
         loading.remove();
+
 
         ajouterMessageBot(
             "⚠️ La génération d'image a échoué."
@@ -821,10 +957,15 @@ async function genererImage(prompt) {
 }
 
 
+// ======================================================
+// AFFICHER IMAGE
+// ======================================================
+
 function afficherImage(base64) {
 
     const el =
         document.createElement("div");
+
 
     el.className =
         "message bot";
@@ -832,6 +973,7 @@ function afficherImage(base64) {
 
     const title =
         document.createElement("div");
+
 
     title.className =
         "bot-title";
@@ -869,6 +1011,10 @@ function afficherImage(base64) {
         "10px";
 
 
+    image.style.display =
+        "block";
+
+
     el.append(
         title,
         image
@@ -879,12 +1025,118 @@ function afficherImage(base64) {
         el,
         composer
     );
+
+
+    scrollChat();
 }
 
 
-/* =========================================================
-   BOUTONS RAPIDES
-========================================================= */
+// ======================================================
+// RACCOURCIS
+// ======================================================
+
+function envoyerCommande(message) {
+
+    if (!input) return;
+
+    input.value = message;
+
+    envoyer();
+}
+
+
+// ======================================================
+// ACCUEIL
+// ======================================================
+
+function allerAccueil() {
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+    if (input) {
+        input.focus();
+    }
+}
+
+
+// ======================================================
+// CHAT
+// ======================================================
+
+function allerChat() {
+
+    if (input) {
+        input.focus();
+    }
+}
+
+
+// ======================================================
+// MÉMOIRE
+// ======================================================
+
+function demanderMemoire() {
+
+    envoyer(
+        "Montre-moi ce que tu sais de ma mémoire."
+    );
+}
+
+
+// ======================================================
+// OUTILS
+// ======================================================
+
+function afficherOutils() {
+
+    ajouterMessageBot(
+        "🔧 Les outils BourNox V2 sont en développement."
+    );
+}
+
+
+// ======================================================
+// INTERNET
+// ======================================================
+
+function demanderInternet() {
+
+    envoyer(
+        "Utilise Internet pour répondre à ma demande."
+    );
+}
+
+
+// ======================================================
+// VOIX
+// ======================================================
+
+function afficherVoix() {
+
+    ajouterMessageBot(
+        "🎙️ Le mode vocal BourNox V2 arrive bientôt."
+    );
+}
+
+
+// ======================================================
+// PARAMÈTRES
+// ======================================================
+
+function afficherParametres() {
+
+    ajouterMessageBot(
+        "⚙️ Les paramètres BourNox V2 arrivent bientôt."
+    );
+}
+
+
+// ======================================================
+// BOUTONS QUICK
+// ======================================================
 
 document
     .querySelectorAll(".quick button")
@@ -895,8 +1147,7 @@ document
             () => {
 
                 const text =
-                    button.textContent
-                        .toLowerCase();
+                    button.textContent.toLowerCase();
 
 
                 if (
@@ -907,19 +1158,15 @@ document
                         "Aide-moi à faire mes devoirs."
                     );
 
-                }
 
-                else if (
+                } else if (
                     text.includes("internet")
                 ) {
 
-                    envoyer(
-                        "Utilise Internet pour répondre à ma demande."
-                    );
+                    demanderInternet();
 
-                }
 
-                else if (
+                } else if (
                     text.includes("image")
                 ) {
 
@@ -930,9 +1177,9 @@ document
     });
 
 
-/* =========================================================
-   SIDEBAR
-========================================================= */
+// ======================================================
+// SIDEBAR
+// ======================================================
 
 document
     .querySelectorAll(".sidebar nav button")
@@ -946,11 +1193,12 @@ document
                     .querySelectorAll(
                         ".sidebar nav button"
                     )
-                    .forEach(btn =>
+                    .forEach(btn => {
+
                         btn.classList.remove(
                             "active"
-                        )
-                    );
+                        );
+                    });
 
 
                 button.classList.add(
@@ -959,8 +1207,7 @@ document
 
 
                 const text =
-                    button.textContent
-                        .toLowerCase();
+                    button.textContent.toLowerCase();
 
 
                 if (
@@ -968,69 +1215,56 @@ document
                     text.includes("chat")
                 ) {
 
-                    input.focus();
+                    allerChat();
 
-                }
 
-                else if (
+                } else if (
                     text.includes("mémoire")
                 ) {
 
-                    envoyer(
-                        "Montre-moi ce que tu sais de ma mémoire."
-                    );
+                    demanderMemoire();
 
-                }
 
-                else if (
+                } else if (
                     text.includes("outils")
                 ) {
 
-                    ajouterMessageBot(
-                        "🔧 Les outils BourNox arrivent bientôt."
-                    );
+                    afficherOutils();
 
-                }
 
-                else if (
+                } else if (
                     text.includes("internet")
                 ) {
 
-                    envoyer(
-                        "Utilise Internet pour répondre à ma demande."
-                    );
+                    demanderInternet();
 
-                }
 
-                else if (
+                } else if (
                     text.includes("voix")
                 ) {
 
-                    ajouterMessageBot(
-                        "🎙️ Le mode vocal BourNox arrive bientôt."
-                    );
+                    afficherVoix();
 
-                }
 
-                else if (
+                } else if (
                     text.includes("paramètres")
                 ) {
 
-                    ajouterMessageBot(
-                        "⚙️ Les paramètres BourNox arrivent bientôt."
-                    );
+                    afficherParametres();
                 }
             }
         );
     });
 
 
-/* =========================================================
-   RIGHTBAR
-========================================================= */
+// ======================================================
+// RACCOURCIS DE LA RIGHTBAR
+// ======================================================
 
 document
-    .querySelectorAll(".rightbar .grid button")
+    .querySelectorAll(
+        ".rightbar .grid button"
+    )
     .forEach(button => {
 
         button.addEventListener(
@@ -1038,8 +1272,7 @@ document
             () => {
 
                 const text =
-                    button.textContent
-                        .toLowerCase();
+                    button.textContent.toLowerCase();
 
 
                 if (
@@ -1050,34 +1283,59 @@ document
                         "Aide-moi avec mes devoirs."
                     );
 
-                }
 
-                else if (
+                } else if (
                     text.includes("internet")
                 ) {
 
-                    envoyer(
-                        "Utilise Internet pour répondre à ma demande."
-                    );
+                    demanderInternet();
 
-                }
 
-                else if (
+                } else if (
                     text.includes("images")
                 ) {
 
                     ouvrirCreateurImage();
 
-                }
 
-                else if (
+                } else if (
                     text.includes("voix")
                 ) {
 
-                    ajouterMessageBot(
-                        "🎙️ Le mode vocal BourNox arrive bientôt."
-                    );
+                    afficherVoix();
                 }
             }
         );
     });
+
+
+// ======================================================
+// RACCOURCI CLAVIER CTRL + K
+// ======================================================
+
+document.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.ctrlKey &&
+            event.key.toLowerCase() === "k"
+        ) {
+
+            event.preventDefault();
+
+            if (input) {
+                input.focus();
+            }
+        }
+    }
+);
+
+
+// ======================================================
+// MESSAGE DE DÉMARRAGE V2
+// ======================================================
+
+console.log(
+    "🚀 BourNox.AI V2 démarré avec succès."
+);
