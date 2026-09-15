@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BourNox.AI - Admin</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="admin-page">
+  <div class="admin-card">
+    <div class="admin-header">
+      <div>
+        <div class="mini-bn">BN</div>
+        <h1>BourNox.AI <span>Admin</span></h1>
+        <p>Gestion des comptes et consultation autorisée des données.</p>
+      </div>
+      <button id="logoutAdmin">Déconnexion</button>
+    </div>
+
+    <section id="adminLogin">
+      <h2>🔐 Connexion administrateur</h2>
+      <input id="adminUsername" placeholder="Identifiant admin">
+      <input id="adminPassword" type="password" placeholder="Mot de passe admin">
+      <button id="adminLoginBtn">Se connecter</button>
+      <p id="adminError"></p>
+    </section>
+
+    <section id="dashboard" class="hidden">
+      <div class="admin-search">
+        <input id="userIdInput" placeholder="Ex : BNX-7F42A91C">
+        <button id="searchUser">🔍 Rechercher</button>
+      </div>
+
+      <div class="admin-columns">
+        <div>
+          <h2>👥 Utilisateurs</h2>
+          <div id="usersList"></div>
+        </div>
+        <div>
+          <h2>📜 Données du compte</h2>
+          <div id="userDetails">
+            <p>Sélectionne un utilisateur ou entre son ID.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+<script src="admin.js"></script>
+</body>
+</html>

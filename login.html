@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BourNox.AI - Connexion</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="hero-logo">BN</div>
+    <h1>BourNox<span>.AI</span></h1>
+    <p class="auth-subtitle">Ton IA. Ton univers.</p>
+
+    <div class="auth-tabs">
+      <button id="loginTab" class="active">Connexion</button>
+      <button id="registerTab">Créer un compte</button>
+    </div>
+
+    <form id="authForm">
+      <label>Pseudo</label>
+      <input id="username" autocomplete="username" placeholder="Ton pseudo" required>
+
+      <label>Mot de passe</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="Ton mot de passe" required>
+
+      <div id="confirmWrap" class="hidden">
+        <label>Confirmer le mot de passe</label>
+        <input id="confirmPassword" type="password" autocomplete="new-password" placeholder="Retape ton mot de passe">
+      </div>
+
+      <button class="auth-submit" type="submit" id="submitBtn">Se connecter</button>
+      <p id="authError" class="auth-error"></p>
+    </form>
+
+    <p class="auth-note">Aucune adresse e-mail nécessaire.</p>
+  </div>
+</div>
+<script src="auth.js"></script>
+</body>
+</html>
