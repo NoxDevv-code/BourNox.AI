@@ -23,6 +23,11 @@
 
     --sidebar-width: 245px;
     --rightbar-width: 300px;
+
+    --radius-sm: 9px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 22px;
 }
 
 * {
@@ -31,6 +36,11 @@
 
 html {
     scroll-behavior: smooth;
+}
+
+html,
+body {
+    min-height: 100%;
 }
 
 body {
@@ -49,9 +59,14 @@ body {
 
     font-family:
         Inter,
-        Segoe UI,
+        "Segoe UI",
         Arial,
         sans-serif;
+
+    overflow-x: hidden;
+
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
 button,
@@ -65,12 +80,22 @@ button {
     border: 0;
 }
 
+button,
+a {
+    -webkit-tap-highlight-color: transparent;
+}
+
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
     outline: 2px solid var(--blue);
     outline-offset: 2px;
+}
+
+::selection {
+    background: rgba(21, 156, 255, .3);
+    color: white;
 }
 
 .app {
@@ -110,16 +135,18 @@ select:focus-visible {
     top: 0;
 
     height: 100vh;
+
+    z-index: 30;
 }
 
 .brand {
     display: flex;
-
     align-items: center;
-
     gap: 11px;
 
     padding: 7px;
+
+    min-width: 0;
 }
 
 .bn,
@@ -144,19 +171,29 @@ select:focus-visible {
 
     box-shadow:
         0 0 28px rgba(21, 156, 255, .3);
+
+    user-select: none;
 }
 
 .bn {
     width: 43px;
     height: 43px;
 
+    flex: 0 0 43px;
+
     border-radius: 13px;
 
     font-size: 18px;
 }
 
+.brand-text {
+    min-width: 0;
+}
+
 .brand strong {
     font-size: 19px;
+
+    white-space: nowrap;
 }
 
 .brand strong span,
@@ -179,16 +216,15 @@ select:focus-visible {
 
     width: calc(100% - 4px);
 
+    min-height: 43px;
+
     padding: 12px 13px;
 
     display: flex;
-
     align-items: center;
-
     gap: 9px;
 
     border: 1px solid var(--line-bright);
-
     border-radius: 12px;
 
     background:
@@ -202,7 +238,11 @@ select:focus-visible {
 
     cursor: pointer;
 
-    transition: .2s ease;
+    transition:
+        transform .2s ease,
+        border-color .2s ease,
+        background .2s ease,
+        box-shadow .2s ease;
 }
 
 .new-chat-btn:hover {
@@ -216,8 +256,13 @@ select:focus-visible {
         0 8px 25px rgba(21, 156, 255, .12);
 }
 
+.new-chat-btn:active {
+    transform: translateY(0);
+}
+
 .new-chat-btn span {
     font-size: 19px;
+    line-height: 1;
 }
 
 .main-nav {
@@ -230,6 +275,8 @@ select:focus-visible {
 
 .nav-btn {
     width: 100%;
+
+    min-height: 42px;
 
     padding: 11px 12px;
 
@@ -249,13 +296,20 @@ select:focus-visible {
 
     cursor: pointer;
 
-    transition: .2s ease;
+    transition:
+        background .2s ease,
+        color .2s ease,
+        transform .2s ease;
 }
 
 .nav-btn:hover {
     background: rgba(21, 156, 255, .08);
 
     color: white;
+}
+
+.nav-btn:active {
+    transform: scale(.99);
 }
 
 .nav-btn.active {
@@ -274,6 +328,8 @@ select:focus-visible {
 
 .nav-btn > span:first-child {
     width: 22px;
+
+    flex: 0 0 22px;
 
     text-align: center;
 
@@ -306,7 +362,6 @@ select:focus-visible {
     align-items: center;
 
     border: 1px solid #25425c;
-
     border-radius: 14px;
 
     background:
@@ -357,6 +412,8 @@ select:focus-visible {
     width: 25px;
     height: 25px;
 
+    flex: 0 0 25px;
+
     border-radius: 7px;
 
     background: #102d48;
@@ -372,6 +429,8 @@ select:focus-visible {
 
 .logout-btn {
     width: 100%;
+
+    min-height: 42px;
 
     padding: 11px 12px;
 
@@ -391,7 +450,9 @@ select:focus-visible {
 
     text-align: left;
 
-    transition: .2s ease;
+    transition:
+        background .2s ease,
+        color .2s ease;
 }
 
 .logout-btn:hover {
@@ -425,7 +486,6 @@ select:focus-visible {
 
 .main {
     min-width: 0;
-
     min-height: 100vh;
 }
 
@@ -437,7 +497,6 @@ select:focus-visible {
     display: flex;
 
     align-items: center;
-
     justify-content: space-between;
 
     border-bottom: 1px solid var(--line);
@@ -448,7 +507,6 @@ select:focus-visible {
     backdrop-filter: blur(16px);
 
     position: sticky;
-
     top: 0;
 
     z-index: 20;
@@ -466,9 +524,15 @@ select:focus-visible {
     width: 30px;
     height: 30px;
 
+    flex: 0 0 30px;
+
     border-radius: 8px;
 
     font-size: 11px;
+}
+
+.mobile-brand strong {
+    font-size: 14px;
 }
 
 .topbar-title {
@@ -503,7 +567,11 @@ select:focus-visible {
 
     cursor: pointer;
 
-    transition: .2s ease;
+    transition:
+        border-color .2s ease,
+        color .2s ease,
+        background .2s ease,
+        transform .2s ease;
 }
 
 .icon-btn:hover {
@@ -512,6 +580,12 @@ select:focus-visible {
     color: white;
 
     background: #0a2035;
+
+    transform: translateY(-1px);
+}
+
+.icon-btn:active {
+    transform: translateY(0);
 }
 
 .notification-dot {
@@ -527,7 +601,8 @@ select:focus-visible {
 
     background: var(--blue);
 
-    box-shadow: 0 0 8px var(--blue);
+    box-shadow:
+        0 0 8px var(--blue);
 }
 
 .profile-btn {
@@ -563,13 +638,16 @@ select:focus-visible {
     display: grid;
     place-items: center;
 
+    flex: 0 0 31px;
+
     border-radius: 9px;
 
-    background: linear-gradient(
-        135deg,
-        #14bfff,
-        #1458ff
-    );
+    background:
+        linear-gradient(
+            135deg,
+            #14bfff,
+            #1458ff
+        );
 
     color: white;
 
@@ -633,7 +711,7 @@ select:focus-visible {
 }
 
 .page-heading h1 {
-    margin: 6px 0 6px;
+    margin: 6px 0;
 
     font-size: 32px;
 
@@ -660,7 +738,12 @@ select:focus-visible {
 
     cursor: pointer;
 
-    transition: .2s ease;
+    transition:
+        transform .2s ease,
+        border-color .2s ease,
+        background .2s ease,
+        box-shadow .2s ease,
+        color .2s ease;
 }
 
 .primary-btn {
@@ -686,6 +769,10 @@ select:focus-visible {
 
     box-shadow:
         0 12px 30px rgba(21, 156, 255, .25);
+}
+
+.primary-btn:active {
+    transform: translateY(0);
 }
 
 .secondary-btn {
@@ -749,7 +836,6 @@ select:focus-visible {
     flex-direction: column;
 
     align-items: center;
-
     justify-content: center;
 
     text-align: center;
@@ -835,7 +921,8 @@ select:focus-visible {
 
     background: var(--green);
 
-    box-shadow: 0 0 8px var(--green);
+    box-shadow:
+        0 0 8px var(--green);
 }
 
 .home-hero h1 {
@@ -847,9 +934,9 @@ select:focus-visible {
 }
 
 .home-hero h1 span {
-    color: var(--blue);
-
     display: block;
+
+    color: var(--blue);
 }
 
 .home-hero > p {
@@ -898,7 +985,11 @@ select:focus-visible {
 
     cursor: pointer;
 
-    transition: .2s ease;
+    transition:
+        transform .2s ease,
+        border-color .2s ease,
+        background .2s ease,
+        box-shadow .2s ease;
 }
 
 .feature-card:hover {
@@ -926,19 +1017,23 @@ select:focus-visible {
 }
 
 .feature-icon.blue {
-    box-shadow: inset 0 0 0 1px rgba(21, 156, 255, .2);
+    box-shadow:
+        inset 0 0 0 1px rgba(21, 156, 255, .2);
 }
 
 .feature-icon.purple {
-    box-shadow: inset 0 0 0 1px rgba(157, 114, 255, .2);
+    box-shadow:
+        inset 0 0 0 1px rgba(157, 114, 255, .2);
 }
 
 .feature-icon.cyan {
-    box-shadow: inset 0 0 0 1px rgba(85, 196, 255, .2);
+    box-shadow:
+        inset 0 0 0 1px rgba(85, 196, 255, .2);
 }
 
 .feature-icon.orange {
-    box-shadow: inset 0 0 0 1px rgba(255, 157, 82, .2);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 157, 82, .2);
 }
 
 .feature-card h3 {
@@ -1097,6 +1192,7 @@ select:focus-visible {
 ========================================================= */
 
 .chat-layout {
+    width: 100%;
     max-width: 1050px;
 
     min-height: calc(100vh - 120px);
@@ -1112,7 +1208,6 @@ select:focus-visible {
     display: flex;
 
     align-items: center;
-
     justify-content: space-between;
 
     gap: 20px;
@@ -1130,6 +1225,8 @@ select:focus-visible {
     display: flex;
 
     gap: 6px;
+
+    flex-wrap: wrap;
 }
 
 .chat-area {
@@ -1144,6 +1241,8 @@ select:focus-visible {
     padding: 10px 7px 20px;
 
     scroll-behavior: smooth;
+
+    scrollbar-gutter: stable;
 }
 
 .welcome-chat {
@@ -1154,7 +1253,6 @@ select:focus-visible {
     flex-direction: column;
 
     align-items: center;
-
     justify-content: center;
 
     text-align: center;
@@ -1267,6 +1365,8 @@ select:focus-visible {
 
     margin-right: 7px;
 
+    flex: 0 0 24px;
+
     border-radius: 7px;
 
     background:
@@ -1289,6 +1389,16 @@ select:focus-visible {
     white-space: normal;
 
     word-break: break-word;
+}
+
+.message-text a {
+    color: var(--blue-2);
+
+    text-decoration: none;
+}
+
+.message-text a:hover {
+    text-decoration: underline;
 }
 
 
@@ -1382,7 +1492,6 @@ select:focus-visible {
     display: flex;
 
     align-items: center;
-
     justify-content: space-between;
 
     gap: 8px;
@@ -1412,17 +1521,22 @@ select:focus-visible {
     width: 6px;
     height: 6px;
 
+    flex: 0 0 6px;
+
     border-radius: 50%;
 
     background: var(--blue);
 
-    box-shadow: 0 0 8px var(--blue);
+    box-shadow:
+        0 0 8px var(--blue);
 }
 
 .code-actions {
     display: flex;
 
     gap: 5px;
+
+    flex-wrap: wrap;
 }
 
 .code-action {
@@ -1460,7 +1574,11 @@ select:focus-visible {
 .code-wrapper {
     display: flex;
 
+    min-width: 0;
+
     overflow-x: auto;
+
+    scrollbar-gutter: stable;
 }
 
 .code-line-numbers {
@@ -1489,6 +1607,8 @@ select:focus-visible {
     margin: 0;
 
     padding: 12px 14px;
+
+    min-width: max-content;
 
     color: #d8e8f5;
 
@@ -1546,7 +1666,9 @@ select:focus-visible {
     box-shadow:
         0 15px 45px rgba(0, 0, 0, .2);
 
-    transition: .2s ease;
+    transition:
+        border-color .2s ease,
+        box-shadow .2s ease;
 }
 
 .composer:focus-within {
@@ -1599,13 +1721,18 @@ select:focus-visible {
 
     cursor: pointer;
 
-    transition: .2s ease;
+    transition:
+        background .2s ease,
+        color .2s ease,
+        transform .2s ease;
 }
 
 .composer-tool:hover {
     background: #0d2942;
 
     color: white;
+
+    transform: translateY(-1px);
 }
 
 .send-btn {
@@ -1624,7 +1751,10 @@ select:focus-visible {
 
     cursor: pointer;
 
-    transition: .2s ease;
+    transition:
+        background .2s ease,
+        box-shadow .2s ease,
+        transform .2s ease;
 }
 
 .send-btn:hover {
@@ -1632,12 +1762,22 @@ select:focus-visible {
 
     box-shadow:
         0 0 20px rgba(21, 156, 255, .3);
+
+    transform: translateY(-1px);
+}
+
+.send-btn:active {
+    transform: translateY(0);
 }
 
 .send-btn:disabled {
     opacity: .4;
 
     cursor: not-allowed;
+
+    transform: none;
+
+    box-shadow: none;
 }
 
 .composer-footer {
@@ -1677,7 +1817,10 @@ select:focus-visible {
 
     cursor: pointer;
 
-    transition: .2s ease;
+    transition:
+        border-color .2s ease,
+        color .2s ease,
+        background .2s ease;
 }
 
 .quick-actions button:hover {
@@ -1717,7 +1860,9 @@ select:focus-visible {
 
     background: #06111d;
 
-    transition: .2s ease;
+    transition:
+        border-color .2s ease,
+        transform .2s ease;
 }
 
 .project-card:hover {
@@ -1745,6 +1890,8 @@ select:focus-visible {
     margin: 13px 0 5px;
 
     font-size: 14px;
+
+    overflow-wrap: anywhere;
 }
 
 .project-card p {
@@ -1755,6 +1902,8 @@ select:focus-visible {
     font-size: 11px;
 
     line-height: 1.5;
+
+    overflow-wrap: anywhere;
 }
 
 .project-card-footer {
@@ -1765,6 +1914,8 @@ select:focus-visible {
     display: flex;
 
     gap: 6px;
+
+    flex-wrap: wrap;
 }
 
 .project-card-footer button {
@@ -1821,6 +1972,8 @@ select:focus-visible {
 .memory-info-icon {
     width: 42px;
     height: 42px;
+
+    flex: 0 0 42px;
 
     display: grid;
 
@@ -1900,6 +2053,8 @@ select:focus-visible {
     font-size: 11px;
 
     line-height: 1.5;
+
+    overflow-wrap: anywhere;
 }
 
 .memory-date {
@@ -1943,7 +2098,10 @@ select:focus-visible {
 
     cursor: pointer;
 
-    transition: .2s ease;
+    transition:
+        transform .2s ease,
+        border-color .2s ease,
+        background .2s ease;
 }
 
 .tool-card:hover {
@@ -2096,6 +2254,12 @@ select:focus-visible {
     color: white;
 
     cursor: pointer;
+
+    transition: background .2s ease;
+}
+
+.internet-search button:hover {
+    background: #24a5ff;
 }
 
 .internet-examples {
@@ -2122,6 +2286,12 @@ select:focus-visible {
     font-size: 9px;
 
     cursor: pointer;
+}
+
+.internet-examples button:hover {
+    border-color: var(--blue);
+
+    color: white;
 }
 
 
@@ -2175,7 +2345,10 @@ select:focus-visible {
     box-shadow:
         0 0 45px rgba(21, 156, 255, .18);
 
-    transition: .3s ease;
+    transition:
+        transform .3s ease,
+        border-color .3s ease,
+        box-shadow .3s ease;
 }
 
 .voice-orb.listening {
@@ -2217,6 +2390,16 @@ select:focus-visible {
     font-weight: 700;
 
     cursor: pointer;
+
+    transition:
+        background .2s ease,
+        transform .2s ease;
+}
+
+.voice-button:hover {
+    background: #24a5ff;
+
+    transform: translateY(-1px);
 }
 
 .voice-options {
@@ -2283,6 +2466,8 @@ select:focus-visible {
     background: #071624;
 
     color: #c9dbea;
+
+    cursor: pointer;
 }
 
 .setting-button {
@@ -2297,6 +2482,12 @@ select:focus-visible {
     color: #a9c4d9;
 
     cursor: pointer;
+}
+
+.setting-button:hover {
+    border-color: var(--blue);
+
+    color: white;
 }
 
 .account-panel {
@@ -2320,6 +2511,8 @@ select:focus-visible {
 .account-avatar {
     width: 50px;
     height: 50px;
+
+    flex: 0 0 50px;
 
     border-radius: 14px;
 }
@@ -2354,6 +2547,10 @@ select:focus-visible {
     cursor: pointer;
 }
 
+.logout-large:hover {
+    background: rgba(255, 85, 114, .11);
+}
+
 
 /* =========================================================
    RIGHTBAR
@@ -2367,6 +2564,13 @@ select:focus-visible {
     border-left: 1px solid var(--line);
 
     background: #040b14;
+
+    position: sticky;
+    top: 0;
+
+    height: 100vh;
+
+    overflow-y: auto;
 }
 
 .right-card {
@@ -2547,11 +2751,14 @@ select:focus-visible {
     width: 5px;
     height: 5px;
 
+    flex: 0 0 5px;
+
     border-radius: 50%;
 
     background: var(--green);
 
-    box-shadow: 0 0 7px var(--green);
+    box-shadow:
+        0 0 7px var(--green);
 }
 
 .system-status strong {
@@ -2627,6 +2834,10 @@ select:focus-visible {
 .modal {
     width: min(470px, 100%);
 
+    max-height: min(700px, calc(100vh - 40px));
+
+    overflow-y: auto;
+
     padding: 23px;
 
     position: relative;
@@ -2664,6 +2875,12 @@ select:focus-visible {
     cursor: pointer;
 
     font-size: 18px;
+}
+
+.modal-close:hover {
+    color: white;
+
+    background: #102b42;
 }
 
 .modal-icon {
@@ -2712,6 +2929,11 @@ select:focus-visible {
     color: white;
 }
 
+.modal input::placeholder,
+.modal textarea::placeholder {
+    color: #5d768c;
+}
+
 .modal textarea {
     min-height: 120px;
 
@@ -2731,9 +2953,13 @@ select:focus-visible {
 
     z-index: 200;
 
+    width: min(330px, calc(100vw - 40px));
+
     display: grid;
 
     gap: 7px;
+
+    pointer-events: none;
 }
 
 .toast {
@@ -2756,6 +2982,8 @@ select:focus-visible {
 
     animation:
         toastIn .2s ease;
+
+    pointer-events: auto;
 }
 
 @keyframes toastIn {
@@ -2806,9 +3034,24 @@ body.light .topbar {
     background: rgba(247, 251, 254, .82);
 }
 
-body.light .new-chat-btn,
-body.light .nav-btn,
-body.light .logout-btn,
+body.light .new-chat-btn {
+    background: #edf7fd;
+    color: #19354a;
+}
+
+body.light .nav-btn {
+    color: #60788b;
+}
+
+body.light .nav-btn:hover,
+body.light .nav-btn.active {
+    color: #17334a;
+}
+
+body.light .logout-btn {
+    color: #60788b;
+}
+
 body.light .feature-card,
 body.light .dashboard-card,
 body.light .project-card,
@@ -2818,7 +3061,8 @@ body.light .settings-card,
 body.light .account-panel,
 body.light .right-card,
 body.light .shortcut-list button,
-body.light .right-shortcuts button {
+body.light .right-shortcuts button,
+body.light .system-bars div {
     background: white;
 
     color: var(--text);
@@ -2834,6 +3078,22 @@ body.light .voice-panel {
             transparent 50%
         ),
         white;
+
+    color: var(--text);
+}
+
+body.light .home-hero > p,
+body.light .internet-panel > p,
+body.light .voice-panel > p {
+    color: #617789;
+}
+
+body.light .status-pill {
+    background: #f1f8fc;
+
+    border-color: #d3e3ed;
+
+    color: #60788b;
 }
 
 body.light .composer,
@@ -2843,6 +3103,18 @@ body.light .internet-search {
 
 body.light .composer textarea {
     color: #172b3c;
+}
+
+body.light .composer-tool {
+    background: #edf5fa;
+
+    color: #60798d;
+}
+
+body.light .quick-actions button {
+    background: #f5f9fc;
+
+    color: #60798d;
 }
 
 body.light .message.bot {
@@ -2857,6 +3129,28 @@ body.light .message.user {
     color: #17334a;
 }
 
+body.light .bot-title {
+    color: #345066;
+}
+
+body.light .code-header {
+    background: #edf5fa;
+}
+
+body.light .code-wrapper {
+    background: #fbfdff;
+}
+
+body.light .code-content {
+    color: #1d3447;
+}
+
+body.light .code-line-numbers {
+    background: #f3f8fb;
+
+    color: #7890a2;
+}
+
 body.light .modal {
     background: white;
 
@@ -2869,6 +3163,28 @@ body.light .settings-card select {
     background: #f4f9fc;
 
     color: #172b3c;
+}
+
+body.light .mini-memory {
+    background: #edf6fb;
+}
+
+body.light .internet-search input {
+    color: #172b3c;
+}
+
+body.light .icon-btn {
+    background: #f5f9fc;
+
+    color: #60788b;
+}
+
+body.light .profile-btn:hover {
+    background: #f2f7fa;
+}
+
+body.light .system-bars strong {
+    color: #345066;
 }
 
 
@@ -2895,6 +3211,14 @@ body.light .settings-card select {
     background: #225777;
 }
 
+body.light ::-webkit-scrollbar-thumb {
+    background: #b8ccd9;
+}
+
+body.light ::-webkit-scrollbar-thumb:hover {
+    background: #8faebe;
+}
+
 
 /* =========================================================
    RESPONSIVE
@@ -2919,6 +3243,7 @@ body.light .settings-card select {
 
 }
 
+
 @media (max-width: 980px) {
 
     :root {
@@ -2927,9 +3252,7 @@ body.light .settings-card select {
 
     .brand-text,
     .nav-label,
-    .new-chat-btn:not(:has(span:first-child)),
     .pro-card,
-    .logout-btn .nav-label,
     .version {
         display: none;
     }
@@ -2944,10 +3267,9 @@ body.light .settings-card select {
 
     .new-chat-btn {
         justify-content: center;
-        padding: 11px 5px;
-    }
 
-    .new-chat-btn {
+        padding: 11px 5px;
+
         font-size: 0;
     }
 
@@ -2993,6 +3315,7 @@ body.light .settings-card select {
     }
 
 }
+
 
 @media (max-width: 650px) {
 
@@ -3064,7 +3387,23 @@ body.light .settings-card select {
         font-size: 9px;
     }
 
+    .memory-item {
+        flex-wrap: wrap;
+    }
+
+    .memory-date {
+        width: 100%;
+        margin-left: 43px;
+    }
+
+    .internet-panel,
+    .voice-panel {
+        margin: 25px auto;
+        padding: 35px 18px;
+    }
+
 }
+
 
 @media (max-width: 480px) {
 
@@ -3084,6 +3423,10 @@ body.light .settings-card select {
         display: flex;
     }
 
+    .view {
+        padding: 12px;
+    }
+
     .home-hero {
         border-radius: 17px;
     }
@@ -3092,12 +3435,27 @@ body.light .settings-card select {
         font-size: 34px;
     }
 
+    .home-hero > p {
+        font-size: 12px;
+    }
+
+    .hero-logo {
+        width: 68px;
+        height: 68px;
+    }
+
     .feature-grid {
         grid-template-columns: 1fr;
     }
 
     .composer-footer {
         display: none;
+    }
+
+    .composer {
+        border-radius: 14px;
+
+        padding: 6px;
     }
 
     .composer-tool {
@@ -3114,12 +3472,57 @@ body.light .settings-card select {
         flex-basis: 36px;
     }
 
+    .composer textarea {
+        font-size: 12px;
+    }
+
     .internet-search {
         flex-direction: column;
     }
 
     .internet-search button {
         width: 100%;
+    }
+
+    .code-header {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+    .code-actions {
+        width: 100%;
+    }
+
+    .code-action {
+        flex: 1;
+    }
+
+    .voice-orb {
+        width: 95px;
+        height: 95px;
+    }
+
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
     }
 
 }
