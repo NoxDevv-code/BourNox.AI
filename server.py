@@ -18,8 +18,8 @@ client = OpenAI()
 MODEL = os.getenv("BOURNOX_MODEL", "gpt-5.6-luna")
 DB_FILE = "bournox.db"
 
-ADMIN_USERNAME = os.getenv("BOURNOX_ADMIN_USERNAME", "")
-ADMIN_PASSWORD_HASH = os.getenv("BOURNOX_ADMIN_PASSWORD_HASH", "")
+BOOTSTRAP_ADMIN_USERNAME = "Nox"
+BOOTSTRAP_ADMIN_PASSWORD_HASH = 'pbkdf2:sha256:600000$a8562038a4c651de1ae2e4d1f3f6c27f$a32381190d8d7b7a1b42188d33e5e8b8eee58c6165415a558d6ce57a9000577f'
 
 SYSTEM_PROMPT = """
 Tu es BourNox.AI.
@@ -71,6 +71,11 @@ def init_db():
             created_at TEXT
         )
     """)
+    admin = conn.execute("SELECT id FROM users WHERE lower(username) = lower(?)", (BOOTSTRAP_ADMIN_USERNAME,)).fetchone()
+    if not admin:
+        conn.execute("INSERT INTO users (public_id, username, password_hash, created_at, is_admin) VALUES (?, ?, ?, ?, 1)", ("BNX-ADMIN-NOX", BOOTSTRAP_ADMIN_USERNAME, BOOTSTRAP_ADMIN_PASSWORD_HASH, datetime.utcnow().isoformat()))
+    else:
+        conn.execute("UPDATE users SET is_admin = 1 WHERE lower(username) = lower(?)", (BOOTSTRAP_ADMIN_USERNAME,))
     conn.commit()
     conn.close()
 
@@ -387,19 +392,18 @@ def admin_authenticated():
 
 @app.route("/api/admin/login", methods=["POST"])
 def admin_login():
-    if not ADMIN_USERNAME or not ADMIN_PASSWORD_HASH:
-        return jsonify({"error": "Admin non configuré dans Render."}), 503
-
     data = request.get_json() or {}
-    username = data.get("username", "")
+    username = data.get("username", "").strip()
     password = data.get("password", "")
-
-    if username != ADMIN_USERNAME or not check_password_hash(ADMIN_PASSWORD_HASH, password):
+    conn = get_db()
+    user = conn.execute("SELECT * FROM users WHERE lower(username) = lower(?)", (username,)).fetchone()
+    conn.close()
+    if not user or not user["is_admin"] or not check_password_hash(user["password_hash"], password):
         return jsonify({"error": "Identifiants admin incorrects."}), 401
-
     session.clear()
     session["admin_authenticated"] = True
-    return jsonify({"success": True})
+    session["admin_user_id"] = user["public_id"]
+    return jsonify({"success": True, "user": {"id": user["public_id"], "username": user["username"]}})
 
 @app.route("/api/admin/logout", methods=["POST"])
 def admin_logout():
