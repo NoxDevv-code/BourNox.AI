@@ -9,9 +9,9 @@ from openai import OpenAI
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
-# ============================================================
+# =========================================================
 # CONFIGURATION
-# ============================================================
+# =========================================================
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 
@@ -38,12 +38,15 @@ MODEL = os.getenv(
 DB_FILE = "bournox.db"
 
 
-# ============================================================
-# ADMIN NOX
-# ============================================================
+# =========================================================
+# ADMIN DE BASE
+# =========================================================
 
 BOOTSTRAP_ADMIN_USERNAME = "Nox"
 
+# Hash existant du compte administrateur Nox.
+# Pour une meilleure sécurité, on pourra ensuite le déplacer
+# complètement dans les variables d'environnement Render.
 BOOTSTRAP_ADMIN_PASSWORD_HASH = (
     "pbkdf2:sha256:600000$"
     "a8562038a4c651de1ae2e4d1f3f6c27f$"
@@ -51,9 +54,9 @@ BOOTSTRAP_ADMIN_PASSWORD_HASH = (
 )
 
 
-# ============================================================
+# =========================================================
 # IDENTITÉ DE BOURNOX
-# ============================================================
+# =========================================================
 
 SYSTEM_PROMPT = """
 Tu es BourNox.AI.
@@ -66,13 +69,8 @@ mais ton identité est BourNox.AI et ton créateur est Nox.
 
 Tu réponds principalement en français.
 
-Tu es :
-- cool
-- intelligent
-- rapide
-- amical
-- parfois drôle
-- très bon en programmation
+Tu es cool, intelligent, rapide, amical, parfois drôle
+et très bon en programmation.
 
 Tu aides pour :
 - les devoirs
@@ -81,38 +79,39 @@ Tu aides pour :
 - les jeux
 - les questions générales
 - les projets
-- les idées créatives
+- les explications techniques
 
 Tu ne prétends jamais être une personne réelle.
+
+Si tu n'es pas sûr d'une information, indique-le clairement
+au lieu d'inventer une réponse.
 """
 
 
-# ============================================================
+# =========================================================
 # BASE DE DONNÉES
-# ============================================================
+# =========================================================
 
 def get_db():
-    """
-    Ouvre SQLite avec quelques réglages permettant
-    de meilleures performances et une meilleure gestion
-    des écritures simultanées.
-    """
-    conn = sqlite3.connect(
-        DB_FILE,
-        timeout=10
-    )
-
+    conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
 
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA synchronous=NORMAL")
-    conn.execute("PRAGMA foreign_keys=ON")
+    # Active les clés étrangères pour cette connexion.
+    conn.execute("PRAGMA foreign_keys = ON")
 
     return conn
 
 
 def init_db():
     conn = get_db()
+
+    # Optimisation SQLite.
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+
+    # -----------------------------------------------------
+    # UTILISATEURS
+    # -----------------------------------------------------
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -125,6 +124,10 @@ def init_db():
         )
     """)
 
+    # -----------------------------------------------------
+    # MESSAGES
+    # -----------------------------------------------------
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -136,6 +139,10 @@ def init_db():
         )
     """)
 
+    # -----------------------------------------------------
+    # MÉMOIRES
+    # -----------------------------------------------------
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS memories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -144,6 +151,10 @@ def init_db():
             created_at TEXT
         )
     """)
+
+    # -----------------------------------------------------
+    # ALERTES
+    # -----------------------------------------------------
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS alerts (
@@ -158,9 +169,25 @@ def init_db():
         )
     """)
 
-    # --------------------------------------------------------
-    # INDEX SQLITE
-    # --------------------------------------------------------
+    # -----------------------------------------------------
+    # PROJETS
+    # -----------------------------------------------------
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            context TEXT DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE(user_id, name)
+        )
+    """)
+
+    # -----------------------------------------------------
+    # INDEX
+    # -----------------------------------------------------
 
     conn.execute("""
         CREATE INDEX IF NOT EXISTS idx_messages_user_session
@@ -173,18 +200,18 @@ def init_db():
     """)
 
     conn.execute("""
-        CREATE INDEX IF NOT EXISTS idx_alerts_id
-        ON alerts(id DESC)
+        CREATE INDEX IF NOT EXISTS idx_alerts_user
+        ON alerts(user_id, id)
     """)
 
     conn.execute("""
-        CREATE INDEX IF NOT EXISTS idx_users_public_id
-        ON users(public_id)
+        CREATE INDEX IF NOT EXISTS idx_projects_user
+        ON projects(user_id, updated_at)
     """)
 
-    # --------------------------------------------------------
-    # CRÉATION / MAINTIEN DU COMPTE ADMIN NOX
-    # --------------------------------------------------------
+    # -----------------------------------------------------
+    # ADMIN NOX
+    # -----------------------------------------------------
 
     admin = conn.execute(
         """
@@ -199,7 +226,13 @@ def init_db():
         conn.execute(
             """
             INSERT INTO users
-            (public_id, username, password_hash, created_at, is_admin)
+            (
+                public_id,
+                username,
+                password_hash,
+                created_at,
+                is_admin
+            )
             VALUES (?, ?, ?, ?, 1)
             """,
             (
@@ -226,9 +259,9 @@ def init_db():
 init_db()
 
 
-# ============================================================
-# UTILISATEUR ACTUEL
-# ============================================================
+# =========================================================
+# UTILISATEUR CONNECTÉ
+# =========================================================
 
 def current_user():
     user_id = session.get("user_id")
@@ -256,9 +289,9 @@ def login_required():
     return current_user() is not None
 
 
-# ============================================================
+# =========================================================
 # MESSAGES
-# ============================================================
+# =========================================================
 
 def save_message(user_id, session_id, role, content):
     conn = get_db()
@@ -266,7 +299,13 @@ def save_message(user_id, session_id, role, content):
     conn.execute(
         """
         INSERT INTO messages
-        (user_id, session_id, role, content, created_at)
+        (
+            user_id,
+            session_id,
+            role,
+            content,
+            created_at
+        )
         VALUES (?, ?, ?, ?, ?)
         """,
         (
@@ -290,7 +329,7 @@ def get_recent_messages(user_id, session_id, limit=10):
         SELECT role, content
         FROM messages
         WHERE user_id = ?
-          AND session_id = ?
+        AND session_id = ?
         ORDER BY id DESC
         LIMIT ?
         """,
@@ -314,35 +353,52 @@ def get_recent_messages(user_id, session_id, limit=10):
     ]
 
 
-# ============================================================
+# =========================================================
 # MÉMOIRE
-# ============================================================
+# =========================================================
 
 def save_memory(user_id, content):
     conn = get_db()
 
-    conn.execute(
+    # Évite les doublons exacts.
+    existing = conn.execute(
         """
-        INSERT INTO memories
-        (user_id, content, created_at)
-        VALUES (?, ?, ?)
+        SELECT id
+        FROM memories
+        WHERE user_id = ?
+        AND lower(content) = lower(?)
+        LIMIT 1
         """,
         (
             user_id,
-            content,
-            datetime.utcnow().isoformat()
+            content
         )
-    )
+    ).fetchone()
 
-    conn.commit()
+    if not existing:
+        conn.execute(
+            """
+            INSERT INTO memories
+            (
+                user_id,
+                content,
+                created_at
+            )
+            VALUES (?, ?, ?)
+            """,
+            (
+                user_id,
+                content,
+                datetime.utcnow().isoformat()
+            )
+        )
+
+        conn.commit()
+
     conn.close()
 
 
-def get_memories(user_id):
-    """
-    On limite à 10 mémoires récentes.
-    Envoyer 30 mémoires à chaque message était inutilement lourd.
-    """
+def get_memories(user_id, limit=20):
     conn = get_db()
 
     rows = conn.execute(
@@ -351,9 +407,12 @@ def get_memories(user_id):
         FROM memories
         WHERE user_id = ?
         ORDER BY id DESC
-        LIMIT 10
+        LIMIT ?
         """,
-        (user_id,)
+        (
+            user_id,
+            limit
+        )
     ).fetchall()
 
     conn.close()
@@ -369,11 +428,15 @@ def detect_memory(message):
         r"^souviens[- ]toi que (.+)$",
         r"^rappelle[- ]toi que (.+)$",
         r"^mémorise que (.+)$",
+        r"^memorise que (.+)$",
         r"^remember that (.+)$",
         r"^je m'appelle (.+)$",
         r"^mon prénom est (.+)$",
+        r"^mon prenom est (.+)$",
         r"^j'aime (.+)$",
-        r"^je préfère (.+)$"
+        r"^j’aime (.+)$",
+        r"^je préfère (.+)$",
+        r"^je prefere (.+)$"
     ]
 
     for pattern in patterns:
@@ -389,17 +452,14 @@ def detect_memory(message):
     return None
 
 
-# ============================================================
-# ALERTES
-# ============================================================
+# =========================================================
+# SÉCURITÉ / ALERTES
+# =========================================================
 
 def detect_suspicious(message):
     """
-    Détecte certains messages potentiellement problématiques.
-
-    Important :
-    cette fonction signale seulement le message.
-    Elle ne bloque pas automatiquement l'utilisateur.
+    Signale certains contenus à risque pour vérification humaine.
+    Le système ne bannit pas automatiquement l'utilisateur.
     """
 
     text = message.lower()
@@ -505,9 +565,9 @@ def save_alert(
     conn.close()
 
 
-# ============================================================
-# RECHERCHE INTERNET
-# ============================================================
+# =========================================================
+# RECHERCHE WEB
+# =========================================================
 
 def needs_web(message):
     text = message.lower()
@@ -536,26 +596,211 @@ def needs_web(message):
     )
 
 
-# ============================================================
+# =========================================================
+# MODES BOURNOX
+# =========================================================
+
+MODES = {
+    "normal": """
+Réponds naturellement et clairement.
+""",
+
+    "professeur": """
+Agis comme un excellent professeur.
+Explique progressivement.
+Utilise des exemples simples.
+Si nécessaire, découpe la réponse en étapes.
+""",
+
+    "developpeur": """
+Agis comme un développeur expérimenté.
+Analyse précisément le problème.
+Explique les erreurs.
+Propose du code propre et directement utilisable.
+""",
+
+    "gamer": """
+Agis comme un assistant gaming.
+Donne des stratégies, astuces et explications utiles.
+Va droit au but.
+""",
+
+    "creatif": """
+Sois créatif.
+Propose des idées originales et plusieurs possibilités
+lorsque cela apporte réellement quelque chose.
+""",
+
+    "nox": """
+Mode Nox.
+Sois particulièrement direct, efficace, technique
+et orienté vers les projets de Nox.
+Évite les explications inutiles.
+"""
+}
+
+
+STYLES = {
+    "court": """
+Réponse courte et directe.
+""",
+
+    "detaille": """
+Réponse détaillée avec les explications importantes.
+""",
+
+    "debutant": """
+Explique comme à quelqu'un qui débute.
+Évite le jargon inutile.
+Explique les termes techniques quand ils sont nécessaires.
+"""
+}
+
+
+PERSONALITIES = {
+    "serieux": """
+Ton sérieux et professionnel.
+""",
+
+    "cool": """
+Ton décontracté, amical et naturel.
+""",
+
+    "drole": """
+Ton léger et drôle lorsque c'est approprié,
+sans sacrifier la précision.
+""",
+
+    "pro": """
+Ton professionnel, précis et structuré.
+"""
+}
+
+
+# =========================================================
+# COMMANDES RAPIDES
+# =========================================================
+
+def command_instruction(message):
+    command = message.strip().lower()
+
+    if command.startswith("/résume") or command.startswith("/resume"):
+        return """
+La commande /résume a été utilisée.
+Résume le contenu ou la demande de l'utilisateur
+de façon claire et concise.
+"""
+
+    if command.startswith("/explique"):
+        return """
+La commande /explique a été utilisée.
+Explique le sujet étape par étape avec des exemples.
+"""
+
+    if command.startswith("/corrige"):
+        return """
+La commande /corrige a été utilisée.
+Corrige les erreurs présentes dans le contenu fourni.
+Explique brièvement les corrections importantes.
+"""
+
+    if command.startswith("/code"):
+        return """
+La commande /code a été utilisée.
+Donne une solution de programmation propre,
+fonctionnelle et expliquée.
+"""
+
+    if command.startswith("/traduis"):
+        return """
+La commande /traduis a été utilisée.
+Traduis précisément le texte demandé
+et conserve son sens naturel.
+"""
+
+    return ""
+
+
+# =========================================================
+# PROJETS
+# =========================================================
+
+def get_project(user_id, project_name):
+    if not project_name:
+        return None
+
+    conn = get_db()
+
+    project = conn.execute(
+        """
+        SELECT *
+        FROM projects
+        WHERE user_id = ?
+        AND lower(name) = lower(?)
+        """,
+        (
+            user_id,
+            project_name
+        )
+    ).fetchone()
+
+    conn.close()
+
+    return project
+
+
+def get_project_context(user_id, project_name):
+    project = get_project(
+        user_id,
+        project_name
+    )
+
+    if not project:
+        return ""
+
+    context = project["context"].strip()
+
+    if not context:
+        return ""
+
+    return f"""
+Projet actuel : {project["name"]}
+
+Contexte du projet :
+{context}
+"""
+
+
+# =========================================================
 # IA
-# ============================================================
+# =========================================================
 
-def ask_ai(message, user_id, session_id):
-    """
-    Prépare le contexte et appelle l'IA.
-
-    Optimisations :
-    - seulement 10 messages récents
-    - seulement 10 mémoires
-    - le message actuel n'est PAS ajouté deux fois
-    """
-
-    memories = get_memories(user_id)
+def ask_ai(
+    message,
+    user_id,
+    session_id,
+    mode="normal",
+    response_style="detaille",
+    personality="cool",
+    project_name=None
+):
+    # -----------------------------------------------------
+    # Historique
+    # -----------------------------------------------------
 
     recent = get_recent_messages(
         user_id,
         session_id,
-        10
+        limit=10
+    )
+
+    # -----------------------------------------------------
+    # Mémoire
+    # -----------------------------------------------------
+
+    memories = get_memories(
+        user_id,
+        limit=20
     )
 
     memory_text = ""
@@ -569,8 +814,79 @@ def ask_ai(message, user_id, session_id):
             )
         )
 
-    # Le message actuel a déjà été enregistré dans /chat.
-    # Il apparaît donc déjà dans "recent".
+    # -----------------------------------------------------
+    # Mode
+    # -----------------------------------------------------
+
+    mode_text = MODES.get(
+        mode,
+        MODES["normal"]
+    )
+
+    # -----------------------------------------------------
+    # Style
+    # -----------------------------------------------------
+
+    style_text = STYLES.get(
+        response_style,
+        STYLES["detaille"]
+    )
+
+    # -----------------------------------------------------
+    # Personnalité
+    # -----------------------------------------------------
+
+    personality_text = PERSONALITIES.get(
+        personality,
+        PERSONALITIES["cool"]
+    )
+
+    # -----------------------------------------------------
+    # Commande rapide
+    # -----------------------------------------------------
+
+    command_text = command_instruction(
+        message
+    )
+
+    # -----------------------------------------------------
+    # Projet
+    # -----------------------------------------------------
+
+    project_text = get_project_context(
+        user_id,
+        project_name
+    )
+
+    # -----------------------------------------------------
+    # Instructions finales
+    # -----------------------------------------------------
+
+    instructions = (
+        SYSTEM_PROMPT
+        + "\n\n"
+        + mode_text
+        + "\n\n"
+        + style_text
+        + "\n\n"
+        + personality_text
+        + "\n\n"
+        + command_text
+        + "\n\n"
+        + project_text
+        + memory_text
+    )
+
+    # -----------------------------------------------------
+    # HISTORIQUE
+    #
+    # IMPORTANT :
+    # Le message actuel est déjà enregistré en base avant
+    # l'appel à ask_ai().
+    #
+    # On ne le rajoute donc PAS une deuxième fois.
+    # -----------------------------------------------------
+
     input_text = [
         {
             "role": item["role"],
@@ -579,15 +895,19 @@ def ask_ai(message, user_id, session_id):
         for item in recent
     ]
 
+    # -----------------------------------------------------
+    # PARAMÈTRES OPENAI
+    # -----------------------------------------------------
+
     kwargs = {
         "model": MODEL,
-        "instructions": SYSTEM_PROMPT + memory_text,
+        "instructions": instructions,
         "input": input_text
     }
 
-    # --------------------------------------------------------
+    # -----------------------------------------------------
     # RECHERCHE WEB
-    # --------------------------------------------------------
+    # -----------------------------------------------------
 
     if needs_web(message):
         try:
@@ -599,49 +919,32 @@ def ask_ai(message, user_id, session_id):
                 }
             ]
 
-            response = client.responses.create(
+            result = client.responses.create(
                 **web_kwargs
             )
 
-            return response.output_text
+            return result.output_text
 
         except Exception as error:
             print(
-                "ERREUR WEB :",
+                "ERREUR RECHERCHE WEB :",
                 error
             )
 
-            # Si la recherche web échoue,
-            # on répond quand même normalement.
-            try:
-                response = client.responses.create(
-                    **kwargs
-                )
-
-                return response.output_text
-
-            except Exception as fallback_error:
-                print(
-                    "ERREUR IA APRÈS ÉCHEC WEB :",
-                    fallback_error
-                )
-
-                raise fallback_error
-
-    # --------------------------------------------------------
+    # -----------------------------------------------------
     # RÉPONSE NORMALE
-    # --------------------------------------------------------
+    # -----------------------------------------------------
 
-    response = client.responses.create(
+    result = client.responses.create(
         **kwargs
     )
 
-    return response.output_text
+    return result.output_text
 
 
-# ============================================================
+# =========================================================
 # GÉNÉRATION D'IMAGE
-# ============================================================
+# =========================================================
 
 def generate_image(prompt):
     response = client.images.generate(
@@ -669,9 +972,9 @@ def generate_image(prompt):
     return image_data.b64_json
 
 
-# ============================================================
+# =========================================================
 # PAGES
-# ============================================================
+# =========================================================
 
 @app.route("/")
 def accueil():
@@ -700,9 +1003,9 @@ def admin_page():
     )
 
 
-# ============================================================
+# =========================================================
 # INSCRIPTION
-# ============================================================
+# =========================================================
 
 @app.route("/api/register", methods=["POST"])
 def register():
@@ -725,10 +1028,8 @@ def register():
 
     if len(username) < 3 or len(username) > 24:
         return jsonify({
-            "error": (
-                "Le pseudo doit faire entre "
-                "3 et 24 caractères."
-            )
+            "error":
+            "Le pseudo doit faire entre 3 et 24 caractères."
         }), 400
 
     if not re.fullmatch(
@@ -736,25 +1037,20 @@ def register():
         username
     ):
         return jsonify({
-            "error": (
-                "Pseudo invalide. Utilise lettres, "
-                "chiffres, _, . ou -."
-            )
+            "error":
+            "Pseudo invalide. Utilise lettres, chiffres, _, . ou -."
         }), 400
 
     if len(password) < 6:
         return jsonify({
-            "error": (
-                "Le mot de passe doit contenir "
-                "au moins 6 caractères."
-            )
+            "error":
+            "Le mot de passe doit contenir au moins 6 caractères."
         }), 400
 
     if password != confirm:
         return jsonify({
-            "error": (
-                "Les mots de passe ne correspondent pas."
-            )
+            "error":
+            "Les mots de passe ne correspondent pas."
         }), 400
 
     conn = get_db()
@@ -772,7 +1068,8 @@ def register():
         conn.close()
 
         return jsonify({
-            "error": "Ce pseudo est déjà utilisé."
+            "error":
+            "Ce pseudo est déjà utilisé."
         }), 409
 
     public_id = (
@@ -817,9 +1114,9 @@ def register():
     })
 
 
-# ============================================================
+# =========================================================
 # CONNEXION
-# ============================================================
+# =========================================================
 
 @app.route("/api/login", methods=["POST"])
 def login():
@@ -856,7 +1153,8 @@ def login():
         )
     ):
         return jsonify({
-            "error": "Pseudo ou mot de passe incorrect."
+            "error":
+            "Pseudo ou mot de passe incorrect."
         }), 401
 
     session.clear()
@@ -873,9 +1171,9 @@ def login():
     })
 
 
-# ============================================================
+# =========================================================
 # DÉCONNEXION
-# ============================================================
+# =========================================================
 
 @app.route("/api/logout", methods=["POST"])
 def logout():
@@ -886,9 +1184,9 @@ def logout():
     })
 
 
-# ============================================================
-# UTILISATEUR CONNECTÉ
-# ============================================================
+# =========================================================
+# UTILISATEUR ACTUEL
+# =========================================================
 
 @app.route("/api/me")
 def me():
@@ -903,14 +1201,15 @@ def me():
         "authenticated": True,
         "user": {
             "id": user["public_id"],
-            "username": user["username"]
+            "username": user["username"],
+            "is_admin": bool(user["is_admin"])
         }
     })
 
 
-# ============================================================
+# =========================================================
 # CHAT
-# ============================================================
+# =========================================================
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -918,9 +1217,8 @@ def chat():
 
     if not user:
         return jsonify({
-            "response": (
-                "Connecte-toi pour utiliser BourNox.AI."
-            )
+            "response":
+            "Connecte-toi pour utiliser BourNox.AI."
         }), 401
 
     try:
@@ -932,18 +1230,42 @@ def chat():
         ).strip()
 
         session_id = data.get(
-            "session_id",
-            str(uuid.uuid4())
+            "session_id"
+        )
+
+        if not session_id:
+            session_id = str(
+                uuid.uuid4()
+            )
+
+        mode = data.get(
+            "mode",
+            "normal"
+        )
+
+        response_style = data.get(
+            "response_style",
+            "detaille"
+        )
+
+        personality = data.get(
+            "personality",
+            "cool"
+        )
+
+        project_name = data.get(
+            "project"
         )
 
         if not message:
             return jsonify({
-                "response": "Écris-moi quelque chose 😎"
+                "response":
+                "Écris-moi quelque chose 😎"
             }), 400
 
-        # ----------------------------------------------------
-        # SAUVEGARDE DU MESSAGE
-        # ----------------------------------------------------
+        # -------------------------------------------------
+        # Sauvegarde du message
+        # -------------------------------------------------
 
         save_message(
             user["public_id"],
@@ -952,9 +1274,9 @@ def chat():
             message
         )
 
-        # ----------------------------------------------------
-        # DÉTECTION ALERTE
-        # ----------------------------------------------------
+        # -------------------------------------------------
+        # Détection sécurité
+        # -------------------------------------------------
 
         suspicious = detect_suspicious(
             message
@@ -971,9 +1293,9 @@ def chat():
                 message
             )
 
-        # ----------------------------------------------------
-        # MÉMOIRE
-        # ----------------------------------------------------
+        # -------------------------------------------------
+        # Détection mémoire
+        # -------------------------------------------------
 
         memory = detect_memory(
             message
@@ -985,19 +1307,23 @@ def chat():
                 memory
             )
 
-        # ----------------------------------------------------
+        # -------------------------------------------------
         # IA
-        # ----------------------------------------------------
+        # -------------------------------------------------
 
         response = ask_ai(
-            message,
-            user["public_id"],
-            session_id
+            message=message,
+            user_id=user["public_id"],
+            session_id=session_id,
+            mode=mode,
+            response_style=response_style,
+            personality=personality,
+            project_name=project_name
         )
 
-        # ----------------------------------------------------
-        # SAUVEGARDE RÉPONSE
-        # ----------------------------------------------------
+        # -------------------------------------------------
+        # Sauvegarde réponse IA
+        # -------------------------------------------------
 
         save_message(
             user["public_id"],
@@ -1018,16 +1344,15 @@ def chat():
         )
 
         return jsonify({
-            "response": (
-                "⚠️ Erreur BourNox : "
-                + str(error)
-            )
+            "response":
+            "⚠️ Erreur BourNox : "
+            + str(error)
         }), 500
 
 
-# ============================================================
+# =========================================================
 # HISTORIQUE
-# ============================================================
+# =========================================================
 
 @app.route("/history")
 def history():
@@ -1035,7 +1360,8 @@ def history():
 
     if not user:
         return jsonify({
-            "error": "Non connecté."
+            "error":
+            "Non connecté."
         }), 401
 
     session_id = request.args.get(
@@ -1054,9 +1380,9 @@ def history():
     )
 
 
-# ============================================================
+# =========================================================
 # MÉMOIRE GET
-# ============================================================
+# =========================================================
 
 @app.route("/memory")
 def memory_get():
@@ -1064,19 +1390,22 @@ def memory_get():
 
     if not user:
         return jsonify({
-            "error": "Non connecté."
+            "error":
+            "Non connecté."
         }), 401
 
     return jsonify({
-        "memories": get_memories(
-            user["public_id"]
+        "memories":
+        get_memories(
+            user["public_id"],
+            50
         )
     })
 
 
-# ============================================================
+# =========================================================
 # MÉMOIRE POST
-# ============================================================
+# =========================================================
 
 @app.route("/memory", methods=["POST"])
 def memory_post():
@@ -1084,7 +1413,8 @@ def memory_post():
 
     if not user:
         return jsonify({
-            "error": "Non connecté."
+            "error":
+            "Non connecté."
         }), 401
 
     data = request.get_json() or {}
@@ -1096,7 +1426,8 @@ def memory_post():
 
     if not content:
         return jsonify({
-            "error": "Mémoire vide."
+            "error":
+            "Mémoire vide."
         }), 400
 
     save_memory(
@@ -1109,9 +1440,181 @@ def memory_post():
     })
 
 
-# ============================================================
+# =========================================================
+# PROJETS
+# =========================================================
+
+@app.route("/projects", methods=["GET"])
+def projects_get():
+    user = current_user()
+
+    if not user:
+        return jsonify({
+            "error":
+            "Non connecté."
+        }), 401
+
+    conn = get_db()
+
+    rows = conn.execute(
+        """
+        SELECT
+            name,
+            context,
+            created_at,
+            updated_at
+        FROM projects
+        WHERE user_id = ?
+        ORDER BY updated_at DESC
+        """,
+        (
+            user["public_id"],
+        )
+    ).fetchall()
+
+    conn.close()
+
+    return jsonify({
+        "projects": [
+            dict(row)
+            for row in rows
+        ]
+    })
+
+
+@app.route("/projects", methods=["POST"])
+def projects_post():
+    user = current_user()
+
+    if not user:
+        return jsonify({
+            "error":
+            "Non connecté."
+        }), 401
+
+    data = request.get_json() or {}
+
+    name = data.get(
+        "name",
+        ""
+    ).strip()
+
+    context = data.get(
+        "context",
+        ""
+    ).strip()
+
+    if not name:
+        return jsonify({
+            "error":
+            "Nom du projet obligatoire."
+        }), 400
+
+    if len(name) > 80:
+        return jsonify({
+            "error":
+            "Le nom du projet est trop long."
+        }), 400
+
+    now = datetime.utcnow().isoformat()
+
+    conn = get_db()
+
+    existing = conn.execute(
+        """
+        SELECT id
+        FROM projects
+        WHERE user_id = ?
+        AND lower(name) = lower(?)
+        """,
+        (
+            user["public_id"],
+            name
+        )
+    ).fetchone()
+
+    if existing:
+        conn.execute(
+            """
+            UPDATE projects
+            SET context = ?,
+                updated_at = ?
+            WHERE id = ?
+            """,
+            (
+                context,
+                now,
+                existing["id"]
+            )
+        )
+    else:
+        conn.execute(
+            """
+            INSERT INTO projects
+            (
+                user_id,
+                name,
+                context,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                user["public_id"],
+                name,
+                context,
+                now,
+                now
+            )
+        )
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        "success": True
+    })
+
+
+@app.route(
+    "/projects/<path:project_name>",
+    methods=["DELETE"]
+)
+def projects_delete(project_name):
+    user = current_user()
+
+    if not user:
+        return jsonify({
+            "error":
+            "Non connecté."
+        }), 401
+
+    conn = get_db()
+
+    conn.execute(
+        """
+        DELETE FROM projects
+        WHERE user_id = ?
+        AND lower(name) = lower(?)
+        """,
+        (
+            user["public_id"],
+            project_name
+        )
+    )
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        "success": True
+    })
+
+
+# =========================================================
 # GÉNÉRATION D'IMAGE
-# ============================================================
+# =========================================================
 
 @app.route(
     "/generate-image",
@@ -1122,10 +1625,8 @@ def generate_image_route():
 
     if not user:
         return jsonify({
-            "error": (
-                "Connecte-toi pour utiliser "
-                "cette fonction."
-            )
+            "error":
+            "Connecte-toi pour utiliser cette fonction."
         }), 401
 
     try:
@@ -1138,9 +1639,8 @@ def generate_image_route():
 
         if not prompt:
             return jsonify({
-                "error": (
-                    "Décris l'image que tu veux créer."
-                )
+                "error":
+                "Décris l'image que tu veux créer."
             }), 400
 
         image_base64 = generate_image(
@@ -1159,16 +1659,15 @@ def generate_image_route():
         )
 
         return jsonify({
-            "error": (
-                "Impossible de générer l'image : "
-                + str(error)
-            )
+            "error":
+            "Impossible de générer l'image : "
+            + str(error)
         }), 500
 
 
-# ============================================================
+# =========================================================
 # ADMIN
-# ============================================================
+# =========================================================
 
 def admin_authenticated():
     return bool(
@@ -1177,10 +1676,6 @@ def admin_authenticated():
         )
     )
 
-
-# ------------------------------------------------------------
-# LOGIN ADMIN
-# ------------------------------------------------------------
 
 @app.route(
     "/api/admin/login",
@@ -1221,7 +1716,8 @@ def admin_login():
         )
     ):
         return jsonify({
-            "error": "Identifiants admin incorrects."
+            "error":
+            "Identifiants admin incorrects."
         }), 401
 
     session.clear()
@@ -1238,10 +1734,6 @@ def admin_login():
     })
 
 
-# ------------------------------------------------------------
-# LOGOUT ADMIN
-# ------------------------------------------------------------
-
 @app.route(
     "/api/admin/logout",
     methods=["POST"]
@@ -1254,15 +1746,12 @@ def admin_logout():
     })
 
 
-# ------------------------------------------------------------
-# ALERTES ADMIN
-# ------------------------------------------------------------
-
 @app.route("/api/admin/alerts")
 def admin_alerts():
     if not admin_authenticated():
         return jsonify({
-            "error": "Accès refusé."
+            "error":
+            "Accès refusé."
         }), 403
 
     conn = get_db()
@@ -1294,10 +1783,6 @@ def admin_alerts():
     })
 
 
-# ------------------------------------------------------------
-# MARQUER UNE ALERTE COMME VÉRIFIÉE
-# ------------------------------------------------------------
-
 @app.route(
     "/api/admin/alerts/<int:alert_id>/review",
     methods=["POST"]
@@ -1305,7 +1790,8 @@ def admin_alerts():
 def review_alert(alert_id):
     if not admin_authenticated():
         return jsonify({
-            "error": "Accès refusé."
+            "error":
+            "Accès refusé."
         }), 403
 
     conn = get_db()
@@ -1316,7 +1802,9 @@ def review_alert(alert_id):
         SET reviewed = 1
         WHERE id = ?
         """,
-        (alert_id,)
+        (
+            alert_id,
+        )
     )
 
     conn.commit()
@@ -1327,15 +1815,12 @@ def review_alert(alert_id):
     })
 
 
-# ------------------------------------------------------------
-# LISTE UTILISATEURS
-# ------------------------------------------------------------
-
 @app.route("/api/admin/users")
 def admin_users():
     if not admin_authenticated():
         return jsonify({
-            "error": "Accès refusé."
+            "error":
+            "Accès refusé."
         }), 403
 
     conn = get_db()
@@ -1362,17 +1847,14 @@ def admin_users():
     })
 
 
-# ------------------------------------------------------------
-# INFORMATIONS SUR UN UTILISATEUR
-# ------------------------------------------------------------
-
 @app.route(
     "/api/admin/user/<public_id>"
 )
 def admin_user(public_id):
     if not admin_authenticated():
         return jsonify({
-            "error": "Accès refusé."
+            "error":
+            "Accès refusé."
         }), 403
 
     conn = get_db()
@@ -1386,14 +1868,17 @@ def admin_user(public_id):
         FROM users
         WHERE public_id = ?
         """,
-        (public_id,)
+        (
+            public_id,
+        )
     ).fetchone()
 
     if not user:
         conn.close()
 
         return jsonify({
-            "error": "Utilisateur introuvable."
+            "error":
+            "Utilisateur introuvable."
         }), 404
 
     messages = conn.execute(
@@ -1407,7 +1892,9 @@ def admin_user(public_id):
         WHERE user_id = ?
         ORDER BY id ASC
         """,
-        (public_id,)
+        (
+            public_id,
+        )
     ).fetchall()
 
     memories = conn.execute(
@@ -1418,7 +1905,26 @@ def admin_user(public_id):
         FROM memories
         WHERE user_id = ?
         ORDER BY id DESC
+        """,
+        (
+            public_id,
+        )
+    ).fetchall()
+
+    projects = conn.execute(
         """
+        SELECT
+            name,
+            context,
+            created_at,
+            updated_at
+        FROM projects
+        WHERE user_id = ?
+        ORDER BY updated_at DESC
+        """,
+        (
+            public_id,
+        )
     ).fetchall()
 
     conn.close()
@@ -1434,13 +1940,18 @@ def admin_user(public_id):
         "memories": [
             dict(row)
             for row in memories
+        ],
+
+        "projects": [
+            dict(row)
+            for row in projects
         ]
     })
 
 
-# ============================================================
+# =========================================================
 # HEALTH CHECK
-# ============================================================
+# =========================================================
 
 @app.route("/health")
 def health():
@@ -1451,9 +1962,9 @@ def health():
     })
 
 
-# ============================================================
+# =========================================================
 # LANCEMENT
-# ============================================================
+# =========================================================
 
 if __name__ == "__main__":
     app.run(
