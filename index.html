@@ -1,244 +1,242 @@
-const input = document.getElementById("msg");
-const send = document.getElementById("send");
-const chat = document.querySelector(".chat");
-const composer = document.querySelector(".composer");
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BourNox.AI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
 
-const SESSION_KEY = "bournox_session_id";
-const USER_KEY = "bournox_user_id";
+<body>
+  <div class="app">
 
-let sessionId = localStorage.getItem(SESSION_KEY);
-if (!sessionId) {
-    sessionId = crypto.randomUUID();
-    localStorage.setItem(SESSION_KEY, sessionId);
-}
+    <aside class="sidebar">
 
-let userId = localStorage.getItem(USER_KEY);
-if (!userId) {
-    userId = "local-user";
-    localStorage.setItem(USER_KEY, userId);
-}
-
-send.addEventListener("click", envoyer);
-
-input.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        envoyer();
-    }
-});
-
-function ajouterMessageUser(message) {
-    const el = document.createElement("div");
-    el.className = "message user";
-    el.textContent = message;
-    chat.insertBefore(el, composer);
-}
-
-function ajouterMessageBot(message) {
-    const el = document.createElement("div");
-    el.className = "message bot";
-
-    const title = document.createElement("div");
-    title.className = "bot-title";
-    title.innerHTML = `
-        <span class="mini-bn">BN</span>
-        BourNox.AI <i>● En ligne</i>
-    `;
-
-    const body = document.createElement("div");
-    body.textContent = message;
-
-    el.appendChild(title);
-    el.appendChild(body);
-    chat.insertBefore(el, composer);
-}
-
-function ajouterChargement() {
-    const el = document.createElement("div");
-    el.className = "message bot bournox-loading";
-    el.innerHTML = `
-        <div class="bot-title">
-            <span class="mini-bn">BN</span>
-            BourNox.AI <i>● réfléchit...</i>
+      <div class="brand">
+        <div class="bn">BN</div>
+        <div>
+          <strong>BourNox<span>.AI</span></strong>
+          <small>Ton IA. Ton univers.</small>
         </div>
-        🧠 Je réfléchis...
-    `;
-    chat.insertBefore(el, composer);
-    return el;
-}
+      </div>
 
-async function envoyer(messageForce = null) {
-    const message = messageForce || input.value.trim();
+      <nav>
+        <button class="active" onclick="allerAccueil()">⌂ <span>Accueil</span></button>
+        <button onclick="allerChat()">💬 <span>Chat</span><b>Nouveau</b></button>
+        <button onclick="demanderMemoire()">🧠 <span>Mémoire</span></button>
+        <button onclick="afficherOutils()">🔧 <span>Outils</span></button>
+        <button onclick="demanderInternet()">🌐 <span>Internet</span></button>
+        <button onclick="afficherVoix()">🎙️ <span>Voix</span></button>
+        <button onclick="afficherParametres()">⚙️ <span>Paramètres</span></button>
+      </nav>
 
-    if (!message || send.disabled) return;
+      <div class="side-bottom">
+        <div class="version">
+          BourNox.AI<br>
+          <small>v1.0.0</small>
+        </div>
+      </div>
 
-    input.value = "";
-    send.disabled = true;
+    </aside>
 
-    ajouterMessageUser(message);
-    const loading = ajouterChargement();
 
-    try {
-        const response = await fetch("/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: message,
-                session_id: sessionId,
-                user_id: userId
-            })
-        });
+    <main class="main">
 
-        let data;
+      <header>
+        <div class="mobile-brand">
+          BN <strong>BourNox<span>.AI</span></strong>
+        </div>
 
-        try {
-            data = await response.json();
-        } catch {
-            data = {};
-        }
+        <div class="top-actions">
+          ☼　♧　<span class="avatar">BN</span>
+        </div>
+      </header>
 
-        loading.remove();
 
-        if (!response.ok) {
-            ajouterMessageBot(
-                data.response || `Erreur du serveur (${response.status}).`
-            );
-            return;
-        }
+      <section class="hero">
 
-        if (data.session_id) {
-            sessionId = data.session_id;
-            localStorage.setItem(SESSION_KEY, sessionId);
-        }
+        <div class="hero-logo">BN</div>
 
-        ajouterMessageBot(
-            data.response || "Je n'ai pas reçu de réponse."
-        );
+        <h1>BourNox<span>.AI</span></h1>
 
-    } catch (error) {
-        console.error("Erreur BourNox :", error);
+        <p>Ton assistant intelligent, créé pour toi.</p>
 
-        loading.remove();
+        <div class="chips">
+          <span>💬 Chat intelligent</span>
+          <span>🧠 Mémoire</span>
+          <span>🌐 Internet</span>
+          <span>🎙️ Voix</span>
+        </div>
 
-        ajouterMessageBot(
-            "⚠️ BourNox n'arrive pas à contacter son cerveau. Le serveur est peut-être en train de se réveiller."
-        );
+      </section>
 
-    } finally {
-        send.disabled = false;
-        input.focus();
+
+      <section class="chat">
+
+        <div class="message user">
+          Salut BourNox, ça marche ?
+        </div>
+
+        <div class="message bot">
+
+          <div class="bot-title">
+            <span class="mini-bn">BN</span>
+            BourNox.AI <i>● En ligne</i>
+          </div>
+
+          Salut ! 👋 Je suis <strong>BourNox.AI</strong>.<br>
+          Ton assistant intelligent est prêt. 🤖
+
+        </div>
+
+
+        <div class="composer">
+
+          <input
+            id="msg"
+            placeholder="Écris ton message ici..."
+            autocomplete="off"
+          >
+
+          <button id="send">➤</button>
+
+        </div>
+
+
+        <div class="quick">
+
+          <button onclick="envoyerCommande('Aide-moi à faire mes devoirs.')">
+            💡 M'aider pour mes devoirs
+          </button>
+
+          <button onclick="envoyerCommande('Utilise Internet pour répondre à ma demande.')">
+            🌐 Rechercher sur Internet
+          </button>
+
+          <button onclick="envoyerCommande('Je veux créer une image. Aide-moi à préparer le prompt.')">
+            🖼️ Créer une image
+          </button>
+
+        </div>
+
+      </section>
+
+    </main>
+
+
+    <aside class="rightbar">
+
+      <div class="card status-card">
+
+        <div class="orb">BN</div>
+
+        <h2>BourNox.AI</h2>
+
+        <p>🟢 En ligne</p>
+
+        <em>« Ensemble, on va plus loin. »</em>
+
+      </div>
+
+
+      <div class="card">
+
+        <h3>
+          🧠 Mémoire
+          <span onclick="demanderMemoire()">Voir tout →</span>
+        </h3>
+
+        <p>👤 Profil utilisateur</p>
+        <p>📚 Préférences</p>
+        <p>🎮 Centres d'intérêt</p>
+
+      </div>
+
+
+      <div class="card">
+
+        <h3>⚡ Raccourcis</h3>
+
+        <div class="grid">
+
+          <button onclick="envoyerCommande('Aide-moi avec mes devoirs.')">
+            📖 Devoirs
+          </button>
+
+          <button onclick="demanderInternet()">
+            🌐 Internet
+          </button>
+
+          <button onclick="envoyerCommande('Je veux créer une image. Aide-moi.')">
+            🖼️ Images
+          </button>
+
+          <button onclick="afficherVoix()">
+            🎙️ Voix
+          </button>
+
+        </div>
+
+      </div>
+
+    </aside>
+
+  </div>
+
+
+  <script src="script.js"></script>
+
+  <script>
+
+    function envoyerCommande(message) {
+      const input = document.getElementById("msg");
+
+      input.value = message;
+
+      if (typeof envoyer === "function") {
+        envoyer();
+      }
     }
-}
 
 
-/* =========================
-   BOUTONS RAPIDES
-========================= */
-
-const quickButtons = document.querySelectorAll(".quick button");
-
-quickButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-        const texte = button.textContent.trim();
-
-        if (texte.includes("devoirs")) {
-            envoyer("Aide-moi à faire mes devoirs.");
-        }
-
-        else if (texte.includes("Internet")) {
-            envoyer("Cherche les informations les plus récentes sur ma demande.");
-        }
-
-        else if (texte.includes("image")) {
-            envoyer("Je veux créer une image. Aide-moi à préparer le prompt.");
-        }
-    });
-});
+    function allerAccueil() {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
 
 
-/* =========================
-   RACCOURCIS DE LA SIDEBAR
-========================= */
-
-const sidebarButtons = document.querySelectorAll(".sidebar nav button");
-
-sidebarButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-
-        sidebarButtons.forEach((btn) => {
-            btn.classList.remove("active");
-        });
-
-        button.classList.add("active");
-
-        const texte = button.textContent.toLowerCase();
-
-        if (texte.includes("accueil")) {
-            input.focus();
-        }
-
-        else if (texte.includes("chat")) {
-            input.focus();
-        }
-
-        else if (texte.includes("mémoire")) {
-            envoyer("Montre-moi ce que tu sais de ma mémoire.");
-        }
-
-        else if (texte.includes("outils")) {
-            ajouterMessageBot(
-                "🔧 Les outils BourNox sont en cours de développement."
-            );
-        }
-
-        else if (texte.includes("internet")) {
-            envoyer("Je veux utiliser Internet pour cette demande.");
-        }
-
-        else if (texte.includes("voix")) {
-            ajouterMessageBot(
-                "🎙️ Le mode vocal BourNox arrive bientôt."
-            );
-        }
-
-        else if (texte.includes("paramètres")) {
-            ajouterMessageBot(
-                "⚙️ Les paramètres BourNox sont en cours de développement."
-            );
-        }
-    });
-});
+    function allerChat() {
+      document.getElementById("msg").focus();
+    }
 
 
-/* =========================
-   RACCOURCIS DU PANNEAU DROIT
-========================= */
+    function demanderMemoire() {
+      envoyerCommande("Montre-moi ce que tu sais de ma mémoire.");
+    }
 
-const rightButtons = document.querySelectorAll(".rightbar .grid button");
 
-rightButtons.forEach((button) => {
-    button.addEventListener("click", () => {
+    function afficherOutils() {
+      ajouterMessageBot("🔧 Les outils BourNox sont en développement.");
+    }
 
-        const texte = button.textContent.toLowerCase();
 
-        if (texte.includes("devoirs")) {
-            envoyer("Aide-moi avec mes devoirs.");
-        }
+    function demanderInternet() {
+      envoyerCommande("Utilise Internet pour répondre à ma demande.");
+    }
 
-        else if (texte.includes("internet")) {
-            envoyer("Utilise Internet pour répondre à ma demande.");
-        }
 
-        else if (texte.includes("images")) {
-            envoyer("Je veux créer une image. Aide-moi.");
-        }
+    function afficherVoix() {
+      ajouterMessageBot("🎙️ Le mode vocal BourNox arrive bientôt.");
+    }
 
-        else if (texte.includes("voix")) {
-            ajouterMessageBot(
-                "🎙️ Le mode vocal BourNox arrive bientôt."
-            );
-        }
-    });
-});
+
+    function afficherParametres() {
+      ajouterMessageBot("⚙️ Les paramètres BourNox arrivent bientôt.");
+    }
+
+  </script>
+
+</body>
+</html>
