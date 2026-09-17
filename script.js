@@ -1,9 +1,20 @@
 // ======================================================
-// Xyro.AI V2.0
-// Script principal
+// XYRO.AI V2.1
+// SCRIPT PRINCIPAL
 // ======================================================
 
 "use strict";
+
+// ======================================================
+// CONFIGURATION
+// ======================================================
+
+const APP_NAME = "Xyro.AI";
+
+const SESSION_KEY = "xyro_session_id";
+const SETTINGS_KEY = "xyro_settings";
+const THEME_KEY = "xyro_theme";
+const PROJECT_KEY = "xyro_project";
 
 // ======================================================
 // DOM
@@ -12,11 +23,6 @@
 const input = document.getElementById("msg");
 const send = document.getElementById("send");
 const chatArea = document.getElementById("chat-area");
-
-const SESSION_KEY = "xyro_session_id";
-const SETTINGS_KEY = "xyro_settings";
-const THEME_KEY = "xyro_theme";
-const PROJECT_KEY = "xyro_project";
 
 // ======================================================
 // SESSION
@@ -32,15 +38,21 @@ function creerSessionId() {
 
     return (
         Date.now().toString(36) +
+        "-" +
         Math.random().toString(36).slice(2)
     );
 }
 
-let sessionId = localStorage.getItem(SESSION_KEY);
+let sessionId =
+    localStorage.getItem(SESSION_KEY);
 
 if (!sessionId) {
     sessionId = creerSessionId();
-    localStorage.setItem(SESSION_KEY, sessionId);
+
+    localStorage.setItem(
+        SESSION_KEY,
+        sessionId
+    );
 }
 
 // ======================================================
@@ -59,24 +71,28 @@ let settings = {
 };
 
 try {
-    const saved = JSON.parse(
-        localStorage.getItem(SETTINGS_KEY)
-    );
+    const saved =
+        localStorage.getItem(SETTINGS_KEY);
 
     if (saved) {
         settings = {
             ...defaultSettings,
-            ...saved
+            ...JSON.parse(saved)
         };
     }
-} catch {
+} catch (error) {
+    console.error(
+        "Erreur paramètres :",
+        error
+    );
+
     settings = {
         ...defaultSettings
     };
 }
 
 // ======================================================
-// UTILITAIRES
+// OUTILS GÉNÉRAUX
 // ======================================================
 
 function $(selector) {
@@ -88,18 +104,35 @@ function $$(selector) {
 }
 
 function escapeHTML(text) {
-    const div = document.createElement("div");
-    div.textContent = String(text ?? "");
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        String(text ?? "");
+
     return div.innerHTML;
+}
+
+function scrollChat() {
+    if (!chatArea) return;
+
+    chatArea.scrollTop =
+        chatArea.scrollHeight;
 }
 
 function afficherNotification(message) {
     const container =
-        document.getElementById("toast-container");
+        document.getElementById(
+            "toast-container"
+        );
 
-    if (!container) return;
+    if (!container) {
+        console.log(message);
+        return;
+    }
 
-    const toast = document.createElement("div");
+    const toast =
+        document.createElement("div");
 
     toast.className = "toast";
     toast.textContent = message;
@@ -108,18 +141,13 @@ function afficherNotification(message) {
 
     setTimeout(() => {
         toast.style.opacity = "0";
-        toast.style.transform = "translateY(8px)";
+        toast.style.transform =
+            "translateY(8px)";
 
         setTimeout(() => {
             toast.remove();
-        }, 200);
+        }, 250);
     }, 3000);
-}
-
-function scrollChat() {
-    if (!chatArea) return;
-
-    chatArea.scrollTop = chatArea.scrollHeight;
 }
 
 function fermerModal(id) {
@@ -140,73 +168,83 @@ async function chargerCompte() {
         const response =
             await fetch("/api/me");
 
+        if (response.status === 401) {
+            window.location.href =
+                "/login";
+
+            return null;
+        }
+
         if (!response.ok) {
-            window.location.href = "/login";
             return null;
         }
 
         const data =
             await response.json();
 
-        if (data.user) {
-            const username =
-                data.user.username ||
-                "Utilisateur";
+        if (!data.user) {
+            return data;
+        }
 
-            const avatar =
-                username
-                    .slice(0, 2)
-                    .toUpperCase();
+        const username =
+            data.user.username ||
+            "Utilisateur";
 
-            const topAvatar =
-                document.querySelector(".avatar");
+        const avatar =
+            username
+                .slice(0, 2)
+                .toUpperCase();
 
-            const topUsername =
-                document.getElementById(
-                    "username-top"
-                );
+        const topAvatar =
+            document.querySelector(
+                ".avatar"
+            );
 
-            const settingsUsername =
-                document.getElementById(
-                    "settings-username"
-                );
+        const topUsername =
+            document.getElementById(
+                "username-top"
+            );
 
-            const settingsAvatar =
-                document.getElementById(
-                    "settings-avatar"
-                );
+        const settingsUsername =
+            document.getElementById(
+                "settings-username"
+            );
 
-            const publicId =
-                document.getElementById(
-                    "settings-public-id"
-                );
+        const settingsAvatar =
+            document.getElementById(
+                "settings-avatar"
+            );
 
-            if (topAvatar) {
-                topAvatar.textContent =
-                    avatar;
-            }
+        const publicId =
+            document.getElementById(
+                "settings-public-id"
+            );
 
-            if (topUsername) {
-                topUsername.textContent =
-                    username;
-            }
+        if (topAvatar) {
+            topAvatar.textContent =
+                avatar;
+        }
 
-            if (settingsUsername) {
-                settingsUsername.textContent =
-                    username;
-            }
+        if (topUsername) {
+            topUsername.textContent =
+                username;
+        }
 
-            if (settingsAvatar) {
-                settingsAvatar.textContent =
-                    avatar;
-            }
+        if (settingsUsername) {
+            settingsUsername.textContent =
+                username;
+        }
 
-            if (publicId) {
-                publicId.textContent =
-                    data.user.public_id
-                        ? `ID : ${data.user.public_id}`
-                        : "ID Xyro";
-            }
+        if (settingsAvatar) {
+            settingsAvatar.textContent =
+                avatar;
+        }
+
+        if (publicId) {
+            publicId.textContent =
+                data.user.public_id
+                    ? `ID : ${data.user.public_id}`
+                    : "ID Xyro";
         }
 
         return data;
@@ -227,9 +265,12 @@ async function chargerCompte() {
 
 async function deconnexion() {
     try {
-        await fetch("/api/logout", {
-            method: "POST"
-        });
+        await fetch(
+            "/api/logout",
+            {
+                method: "POST"
+            }
+        );
     } catch (error) {
         console.error(
             "Erreur déconnexion :",
@@ -237,10 +278,16 @@ async function deconnexion() {
         );
     }
 
-    localStorage.removeItem(SESSION_KEY);
-    localStorage.removeItem(PROJECT_KEY);
+    localStorage.removeItem(
+        SESSION_KEY
+    );
 
-    window.location.href = "/login";
+    localStorage.removeItem(
+        PROJECT_KEY
+    );
+
+    window.location.href =
+        "/login";
 }
 
 // ======================================================
@@ -264,11 +311,22 @@ function ouvrirVue(viewName) {
             `view-${viewName}`
         );
 
-    if (!view) return;
+    if (!view) {
+        console.warn(
+            "Vue introuvable :",
+            viewName
+        );
 
-    $$(".view").forEach(element => {
-        element.classList.remove("active");
-    });
+        return;
+    }
+
+    $$(".view").forEach(
+        element => {
+            element.classList.remove(
+                "active"
+            );
+        }
+    );
 
     view.classList.add("active");
 
@@ -276,7 +334,8 @@ function ouvrirVue(viewName) {
         .forEach(button => {
             button.classList.toggle(
                 "active",
-                button.dataset.view === viewName
+                button.dataset.view ===
+                    viewName
             );
         });
 
@@ -288,7 +347,13 @@ function ouvrirVue(viewName) {
     if (title) {
         title.textContent =
             viewTitles[viewName] ||
-            "Xyro.AI";
+            APP_NAME;
+    }
+
+    if (viewName === "chat") {
+        setTimeout(() => {
+            input?.focus();
+        }, 100);
     }
 
     if (viewName === "memory") {
@@ -299,18 +364,8 @@ function ouvrirVue(viewName) {
         chargerProjets();
     }
 
-    if (viewName === "chat") {
-        setTimeout(() => {
-            input?.focus();
-        }, 100);
-    }
-
     if (viewName === "settings") {
         chargerParametresUI();
-    }
-
-    if (viewName === "home") {
-        chargerMemoire();
     }
 }
 
@@ -319,7 +374,8 @@ function ouvrirVue(viewName) {
 // ======================================================
 
 function nouvelleDiscussion() {
-    sessionId = creerSessionId();
+    sessionId =
+        creerSessionId();
 
     localStorage.setItem(
         SESSION_KEY,
@@ -339,8 +395,8 @@ function nouvelleDiscussion() {
                 </h2>
 
                 <p>
-                    Une nouvelle conversation avec
-                    <strong>Xyro.AI</strong>.
+                    Commence une conversation
+                    avec <strong>Xyro.AI</strong>.
                 </p>
 
             </div>
@@ -355,7 +411,7 @@ function nouvelleDiscussion() {
 }
 
 // ======================================================
-// CHAT
+// MESSAGE UTILISATEUR
 // ======================================================
 
 function ajouterMessageUser(message) {
@@ -370,16 +426,25 @@ function ajouterMessageUser(message) {
         welcome.remove();
     }
 
-    const el =
+    const element =
         document.createElement("div");
 
-    el.className = "message user";
-    el.textContent = message;
+    element.className =
+        "message user";
 
-    chatArea.appendChild(el);
+    element.textContent =
+        message;
+
+    chatArea.appendChild(
+        element
+    );
 
     scrollChat();
 }
+
+// ======================================================
+// MESSAGE XYRO
+// ======================================================
 
 function ajouterMessageBot(
     message,
@@ -400,30 +465,46 @@ function ajouterMessageBot(
         welcome.remove();
     }
 
-    const el =
+    const element =
         document.createElement("div");
 
-    el.className = "message bot";
+    element.className =
+        "message bot";
 
     const title =
         document.createElement("div");
 
-    title.className = "bot-title";
+    title.className =
+        "bot-title";
 
     title.innerHTML = `
-        <span class="mini-bn">XY</span>
+        <span class="mini-bn">
+            XY
+        </span>
+
         Xyro.AI
-        <i>● En ligne</i>
+
+        <i>
+            ● En ligne
+        </i>
     `;
 
-    el.appendChild(title);
-
     const content =
-        afficherMessageFormate(message);
+        afficherMessageFormate(
+            message
+        );
 
-    el.appendChild(content);
+    element.appendChild(
+        title
+    );
 
-    chatArea.appendChild(el);
+    element.appendChild(
+        content
+    );
+
+    chatArea.appendChild(
+        element
+    );
 
     scrollChat();
 
@@ -433,23 +514,29 @@ function ajouterMessageBot(
         "speechSynthesis" in window
     ) {
         lireTexte(
-            nettoyerTextePourVoix(message)
+            nettoyerTextePourVoix(
+                message
+            )
         );
     }
 }
+
+// ======================================================
+// CHARGEMENT
+// ======================================================
 
 function ajouterChargement() {
     if (!chatArea) {
         return null;
     }
 
-    const el =
+    const element =
         document.createElement("div");
 
-    el.className =
+    element.className =
         "message bot bournox-loading";
 
-    el.innerHTML = `
+    element.innerHTML = `
         <div class="bot-title">
 
             <span class="mini-bn">
@@ -481,27 +568,34 @@ function ajouterChargement() {
         </div>
     `;
 
-    chatArea.appendChild(el);
+    chatArea.appendChild(
+        element
+    );
 
     scrollChat();
 
-    return el;
+    return element;
 }
 
 // ======================================================
-// ENVOI CHAT
+// ENVOYER UN MESSAGE
 // ======================================================
 
 async function envoyer(
     messageForce = null
 ) {
-    if (!input || !send) return;
+    if (!input || !send) {
+        return;
+    }
 
     const message =
-        messageForce ||
+        messageForce ??
         input.value.trim();
 
-    if (!message || send.disabled) {
+    if (
+        !message ||
+        send.disabled
+    ) {
         return;
     }
 
@@ -513,62 +607,70 @@ async function envoyer(
 
     ouvrirVue("chat");
 
-    ajouterMessageUser(message);
+    ajouterMessageUser(
+        message
+    );
 
     const loading =
         ajouterChargement();
 
     try {
         const response =
-            await fetch("/chat", {
-                method: "POST",
+            await fetch(
+                "/chat",
+                {
+                    method: "POST",
 
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-                body: JSON.stringify({
-                    message,
+                    body: JSON.stringify({
+                        message,
 
-                    session_id:
-                        sessionId,
+                        session_id:
+                            sessionId,
 
-                    mode:
-                        settings.mode,
+                        mode:
+                            settings.mode,
 
-                    response_style:
-                        settings.response_style,
+                        response_style:
+                            settings.response_style,
 
-                    personality:
-                        settings.personality,
+                        personality:
+                            settings.personality,
 
-                    project:
-                        window.xyroProject ||
-                        ""
-                })
-            });
+                        project:
+                            window.xyroProject ||
+                            ""
+                    })
+                }
+            );
 
         const data =
             await response
                 .json()
-                .catch(() => ({}));
+                .catch(
+                    () => ({})
+                );
 
-        if (loading) {
-            loading.remove();
-        }
+        loading?.remove();
 
-        if (response.status === 401) {
+        if (
+            response.status === 401
+        ) {
             window.location.href =
                 "/login";
 
             return;
         }
 
-        if (response.status === 429) {
+        if (
+            response.status === 429
+        ) {
             ajouterMessageBot(
                 data.error ||
-                data.response ||
                 "🟠 Xyro est temporairement limité par l'API. Réessaie dans quelques minutes."
             );
 
@@ -597,6 +699,7 @@ async function envoyer(
 
         ajouterMessageBot(
             data.response ||
+            data.output ||
             "Je n'ai pas reçu de réponse."
         );
 
@@ -606,12 +709,10 @@ async function envoyer(
             error
         );
 
-        if (loading) {
-            loading.remove();
-        }
+        loading?.remove();
 
         ajouterMessageBot(
-            "⚠️ Impossible de contacter le cerveau de Xyro."
+            "⚠️ Impossible de contacter Xyro pour le moment."
         );
 
     } finally {
@@ -621,7 +722,9 @@ async function envoyer(
     }
 }
 
-function envoyerCommande(message) {
+function envoyerCommande(
+    message
+) {
     if (!message) return;
 
     ouvrirVue("chat");
@@ -630,37 +733,42 @@ function envoyerCommande(message) {
 }
 
 // ======================================================
-// ENTER
+// CHAMP DE MESSAGE
 // ======================================================
-
-input?.addEventListener(
-    "keydown",
-    event => {
-        if (
-            event.key === "Enter" &&
-            !event.shiftKey
-        ) {
-            event.preventDefault();
-            envoyer();
-        }
-    }
-);
-
-input?.addEventListener(
-    "input",
-    ajusterHauteurInput
-);
 
 function ajusterHauteurInput() {
     if (!input) return;
 
-    input.style.height = "auto";
+    input.style.height =
+        "auto";
 
     input.style.height =
         Math.min(
             input.scrollHeight,
             150
         ) + "px";
+}
+
+if (input) {
+    input.addEventListener(
+        "keydown",
+        event => {
+            if (
+                event.key ===
+                    "Enter" &&
+                !event.shiftKey
+            ) {
+                event.preventDefault();
+
+                envoyer();
+            }
+        }
+    );
+
+    input.addEventListener(
+        "input",
+        ajusterHauteurInput
+    );
 }
 
 // ======================================================
@@ -673,17 +781,23 @@ async function chargerHistorique() {
     try {
         const response =
             await fetch(
-                `/history?session_id=${encodeURIComponent(sessionId)}`
+                `/history?session_id=${encodeURIComponent(
+                    sessionId
+                )}`
             );
 
-        if (response.status === 401) {
+        if (
+            response.status === 401
+        ) {
             window.location.href =
                 "/login";
 
             return;
         }
 
-        if (!response.ok) return;
+        if (!response.ok) {
+            return;
+        }
 
         const data =
             await response.json();
@@ -693,13 +807,20 @@ async function chargerHistorique() {
             data.history ||
             [];
 
-        if (!Array.isArray(messages)) {
+        if (
+            !Array.isArray(
+                messages
+            )
+        ) {
             return;
         }
 
-        chatArea.innerHTML = "";
+        chatArea.innerHTML =
+            "";
 
-        if (!messages.length) {
+        if (
+            messages.length === 0
+        ) {
             chatArea.innerHTML = `
                 <div class="welcome-chat">
 
@@ -712,7 +833,8 @@ async function chargerHistorique() {
                     </h2>
 
                     <p>
-                        Commence une conversation avec Xyro.AI.
+                        Commence une conversation
+                        avec <strong>Xyro.AI</strong>.
                     </p>
 
                 </div>
@@ -721,26 +843,32 @@ async function chargerHistorique() {
             return;
         }
 
-        messages.forEach(item => {
-            if (
-                item.role === "user"
-            ) {
-                ajouterMessageUser(
-                    item.content
-                );
-            }
+        messages.forEach(
+            item => {
+                if (
+                    item.role ===
+                    "user"
+                ) {
+                    ajouterMessageUser(
+                        item.content
+                    );
+                }
 
-            else if (
-                item.role === "assistant"
-            ) {
-                ajouterMessageBot(
-                    item.content,
-                    {
-                        speak: false
-                    }
-                );
+                if (
+                    item.role ===
+                        "assistant" ||
+                    item.role ===
+                        "bot"
+                ) {
+                    ajouterMessageBot(
+                        item.content,
+                        {
+                            speak: false
+                        }
+                    );
+                }
             }
-        });
+        );
 
     } catch (error) {
         console.error(
@@ -751,7 +879,7 @@ async function chargerHistorique() {
 }
 
 // ======================================================
-// FORMATAGE CODE
+// CODE
 // ======================================================
 
 function detecterLangage(code) {
@@ -784,7 +912,7 @@ function detecterLangage(code) {
     }
 
     if (
-        /\bSELECT\b|\bINSERT\b|\bUPDATE\b|\bDELETE\b/i
+        /\b(SELECT|INSERT|UPDATE|DELETE)\b/i
             .test(code)
     ) {
         return "SQL";
@@ -832,7 +960,9 @@ function coloriserCode(
             '<span class="code-function">$1</span>'
         );
 
-    if (langage === "HTML") {
+    if (
+        langage === "HTML"
+    ) {
         result =
             result.replace(
                 /(&lt;\/?)([\w-]+)/g,
@@ -843,24 +973,62 @@ function coloriserCode(
     return result;
 }
 
+function obtenirExtension(
+    langage
+) {
+    switch (
+        langage.toLowerCase()
+    ) {
+        case "python":
+            return "py";
+
+        case "javascript":
+            return "js";
+
+        case "html":
+            return "html";
+
+        case "css":
+            return "css";
+
+        case "sql":
+            return "sql";
+
+        case "java":
+            return "java";
+
+        case "c++":
+            return "cpp";
+
+        default:
+            return "txt";
+    }
+}
+
 function creerBlocCode(
     code,
     langage
 ) {
     const wrapper =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     wrapper.className =
         "bournox-code";
 
     const header =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     header.className =
         "code-header";
 
     const language =
-        document.createElement("span");
+        document.createElement(
+            "span"
+        );
 
     language.className =
         "code-language";
@@ -869,13 +1037,17 @@ function creerBlocCode(
         langage;
 
     const actions =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     actions.className =
         "code-actions";
 
     const copyButton =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
 
     copyButton.className =
         "code-action";
@@ -884,7 +1056,9 @@ function creerBlocCode(
         "📋 Copier";
 
     const downloadButton =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
 
     downloadButton.className =
         "code-action";
@@ -903,19 +1077,25 @@ function creerBlocCode(
     );
 
     const codeWrapper =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     codeWrapper.className =
         "code-wrapper";
 
     const lineNumbers =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     lineNumbers.className =
         "code-line-numbers";
 
     const codeContent =
-        document.createElement("pre");
+        document.createElement(
+            "pre"
+        );
 
     codeContent.className =
         "code-content";
@@ -957,17 +1137,9 @@ function creerBlocCode(
                 copyButton.textContent =
                     "✅ Copié !";
 
-                copyButton.classList.add(
-                    "copied"
-                );
-
                 setTimeout(() => {
                     copyButton.textContent =
                         "📋 Copier";
-
-                    copyButton.classList.remove(
-                        "copied"
-                    );
                 }, 1500);
 
             } catch {
@@ -1001,9 +1173,12 @@ function creerBlocCode(
                 );
 
             const link =
-                document.createElement("a");
+                document.createElement(
+                    "a"
+                );
 
-            link.href = url;
+            link.href =
+                url;
 
             link.download =
                 `xyro-code.${extension}`;
@@ -1016,48 +1191,22 @@ function creerBlocCode(
 
             link.remove();
 
-            URL.revokeObjectURL(url);
+            URL.revokeObjectURL(
+                url
+            );
         }
     );
 
     return wrapper;
 }
 
-function obtenirExtension(langage) {
-    switch (
-        langage.toLowerCase()
-    ) {
-        case "python":
-            return "py";
-
-        case "javascript":
-            return "js";
-
-        case "html":
-            return "html";
-
-        case "css":
-            return "css";
-
-        case "sql":
-            return "sql";
-
-        case "java":
-            return "java";
-
-        case "c++":
-            return "cpp";
-
-        default:
-            return "txt";
-    }
-}
-
 function afficherMessageFormate(
     message
 ) {
     const container =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     container.className =
         "message-text";
@@ -1069,30 +1218,31 @@ function afficherMessageFormate(
     let match;
 
     while (
-        (match = regex.exec(message)) !== null
+        (match =
+            regex.exec(message)) !== null
     ) {
-        const texteAvant =
+        const avant =
             message.slice(
                 dernierIndex,
                 match.index
             );
 
-        if (texteAvant.trim()) {
-            const texte =
+        if (avant.trim()) {
+            const text =
                 document.createElement(
                     "div"
                 );
 
-            texte.innerHTML =
+            text.innerHTML =
                 escapeHTML(
-                    texteAvant
+                    avant
                 ).replace(
                     /\n/g,
                     "<br>"
                 );
 
             container.appendChild(
-                texte
+                text
             );
         }
 
@@ -1101,7 +1251,9 @@ function afficherMessageFormate(
 
         const langage =
             match[1] ||
-            detecterLangage(code);
+            detecterLangage(
+                code
+            );
 
         container.appendChild(
             creerBlocCode(
@@ -1114,27 +1266,27 @@ function afficherMessageFormate(
             regex.lastIndex;
     }
 
-    const texteFinal =
+    const reste =
         message.slice(
             dernierIndex
         );
 
-    if (texteFinal.trim()) {
-        const texte =
+    if (reste.trim()) {
+        const text =
             document.createElement(
                 "div"
             );
 
-        texte.innerHTML =
+        text.innerHTML =
             escapeHTML(
-                texteFinal
+                reste
             ).replace(
                 /\n/g,
                 "<br>"
             );
 
         container.appendChild(
-            texte
+            text
         );
     }
 
@@ -1148,26 +1300,39 @@ function afficherMessageFormate(
 function ouvrirCreateurImage() {
     ouvrirVue("chat");
 
-    const existing =
+    const ancien =
         document.getElementById(
             "image-creator"
         );
 
-    if (existing) {
-        existing.remove();
+    if (ancien) {
+        ancien.remove();
     }
 
-    const el =
-        document.createElement("div");
+    const element =
+        document.createElement(
+            "div"
+        );
 
-    el.id = "image-creator";
-    el.className = "message bot";
+    element.id =
+        "image-creator";
 
-    el.innerHTML = `
+    element.className =
+        "message bot";
+
+    element.innerHTML = `
         <div class="bot-title">
-            <span class="mini-bn">XY</span>
+
+            <span class="mini-bn">
+                XY
+            </span>
+
             Xyro.AI
-            <i>● Générateur d'image</i>
+
+            <i>
+                ● Générateur d'image
+            </i>
+
         </div>
 
         <div>
@@ -1176,27 +1341,25 @@ function ouvrirCreateurImage() {
 
         <textarea
             id="image-prompt"
+            placeholder="Ex : un robot XY dans une ville futuriste..."
             style="
                 width:100%;
                 min-height:100px;
                 margin-top:12px;
                 padding:12px;
-                border:1px solid #1b4569;
                 border-radius:10px;
-                background:#030b15;
-                color:white;
                 resize:vertical;
             "
-            placeholder="Ex : un robot XY dans une ville futuriste..."
         ></textarea>
 
         <div
             style="
                 display:flex;
-                gap:7px;
+                gap:8px;
                 margin-top:10px;
             "
         >
+
             <button
                 id="create-image-btn"
                 class="primary-btn"
@@ -1210,12 +1373,15 @@ function ouvrirCreateurImage() {
             >
                 Annuler
             </button>
+
         </div>
     `;
 
-    chatArea.appendChild(el);
+    chatArea.appendChild(
+        element
+    );
 
-    const promptInput =
+    const prompt =
         document.getElementById(
             "image-prompt"
         );
@@ -1223,26 +1389,26 @@ function ouvrirCreateurImage() {
     document.getElementById(
         "create-image-btn"
     ).onclick = () => {
-        const prompt =
-            promptInput.value.trim();
+        const value =
+            prompt.value.trim();
 
-        if (!prompt) {
-            promptInput.focus();
+        if (!value) {
+            prompt.focus();
             return;
         }
 
-        el.remove();
+        element.remove();
 
-        genererImage(prompt);
+        genererImage(value);
     };
 
     document.getElementById(
         "cancel-image-btn"
     ).onclick = () => {
-        el.remove();
+        element.remove();
     };
 
-    promptInput.focus();
+    prompt.focus();
 
     scrollChat();
 }
@@ -1279,7 +1445,9 @@ async function genererImage(
         const data =
             await response
                 .json()
-                .catch(() => ({}));
+                .catch(
+                    () => ({})
+                );
 
         loading?.remove();
 
@@ -1290,6 +1458,14 @@ async function genererImage(
                     data.error ||
                     "Impossible de créer l'image."
                 )
+            );
+
+            return;
+        }
+
+        if (!data.image) {
+            ajouterMessageBot(
+                "⚠️ Xyro n'a reçu aucune image."
             );
 
             return;
@@ -1313,27 +1489,37 @@ async function genererImage(
     }
 }
 
-function afficherImage(base64) {
-    const el =
-        document.createElement("div");
+function afficherImage(
+    base64
+) {
+    const element =
+        document.createElement(
+            "div"
+        );
 
-    el.className =
+    element.className =
         "message bot";
 
-    const title =
-        document.createElement("div");
+    element.innerHTML = `
+        <div class="bot-title">
 
-    title.className =
-        "bot-title";
+            <span class="mini-bn">
+                XY
+            </span>
 
-    title.innerHTML = `
-        <span class="mini-bn">XY</span>
-        Xyro.AI
-        <i>● Image créée</i>
+            Xyro.AI
+
+            <i>
+                ● Image créée
+            </i>
+
+        </div>
     `;
 
     const image =
-        document.createElement("img");
+        document.createElement(
+            "img"
+        );
 
     image.src =
         "data:image/png;base64," +
@@ -1348,18 +1534,16 @@ function afficherImage(base64) {
     image.style.borderRadius =
         "14px";
 
-    image.style.display =
-        "block";
-
     image.style.marginTop =
-        "8px";
+        "10px";
 
-    el.append(
-        title,
+    element.appendChild(
         image
     );
 
-    chatArea.appendChild(el);
+    chatArea.appendChild(
+        element
+    );
 
     scrollChat();
 }
@@ -1378,9 +1562,13 @@ async function chargerMemoire() {
 
     try {
         const response =
-            await fetch("/memory");
+            await fetch(
+                "/memory"
+            );
 
-        if (response.status === 401) {
+        if (
+            response.status === 401
+        ) {
             window.location.href =
                 "/login";
 
@@ -1395,10 +1583,13 @@ async function chargerMemoire() {
             data.memory ||
             [];
 
-        container.innerHTML = "";
+        container.innerHTML =
+            "";
 
         if (
-            !Array.isArray(memories) ||
+            !Array.isArray(
+                memories
+            ) ||
             memories.length === 0
         ) {
             container.innerHTML = `
@@ -1407,18 +1598,20 @@ async function chargerMemoire() {
                     <div>🧠</div>
 
                     <h3>
-                        Ta mémoire est encore vide
+                        Ta mémoire est vide
                     </h3>
 
                     <p>
-                        Dis « souviens-toi que... »
-                        pendant une conversation.
+                        Dis à Xyro de retenir
+                        quelque chose pendant une conversation.
                     </p>
 
                 </div>
             `;
 
-            mettreAJourMemoireDroite(0);
+            mettreAJourMemoireDroite(
+                0
+            );
 
             return;
         }
@@ -1426,21 +1619,14 @@ async function chargerMemoire() {
         memories.forEach(
             memory => {
                 const content =
-                    typeof memory === "string"
+                    typeof memory ===
+                    "string"
                         ? memory
                         : (
                             memory.content ||
                             memory.memory ||
                             ""
                         );
-
-                const date =
-                    typeof memory === "object"
-                        ? (
-                            memory.created_at ||
-                            ""
-                        )
-                        : "";
 
                 const item =
                     document.createElement(
@@ -1466,16 +1652,6 @@ async function chargerMemoire() {
                         </p>
 
                     </div>
-
-                    ${
-                        date
-                            ? `
-                                <span class="memory-date">
-                                    ${escapeHTML(date)}
-                                </span>
-                              `
-                            : ""
-                    }
                 `;
 
                 container.appendChild(
@@ -1496,11 +1672,13 @@ async function chargerMemoire() {
 
         container.innerHTML = `
             <div class="empty-state">
+
                 <div>⚠️</div>
 
                 <h3>
                     Impossible de charger la mémoire
                 </h3>
+
             </div>
         `;
     }
@@ -1543,6 +1721,7 @@ function mettreAJourMemoireDroite(
 
 function demanderMemoire() {
     ouvrirVue("memory");
+
     chargerMemoire();
 }
 
@@ -1560,9 +1739,13 @@ async function chargerProjets() {
 
     try {
         const response =
-            await fetch("/projects");
+            await fetch(
+                "/projects"
+            );
 
-        if (response.status === 401) {
+        if (
+            response.status === 401
+        ) {
             window.location.href =
                 "/login";
 
@@ -1573,11 +1756,15 @@ async function chargerProjets() {
             await response.json();
 
         const projects =
-            data.projects || [];
+            data.projects ||
+            [];
 
-        container.innerHTML = "";
+        container.innerHTML =
+            "";
 
-        if (!projects.length) {
+        if (
+            projects.length === 0
+        ) {
             container.innerHTML = `
                 <div class="empty-state">
 
@@ -1588,13 +1775,12 @@ async function chargerProjets() {
                     </h3>
 
                     <p>
-                        Crée ton premier projet pour donner
-                        un contexte permanent à Xyro.
+                        Crée ton premier projet
+                        pour travailler avec Xyro.
                     </p>
 
                     <button
                         class="primary-btn"
-                        style="margin-top:12px"
                         onclick="ouvrirCreationProjet()"
                     >
                         ＋ Créer un projet
@@ -1614,17 +1800,17 @@ async function chargerProjets() {
 
                 const context =
                     project.context ||
-                    "Aucun contexte défini.";
+                    "Aucun contexte.";
 
-                const item =
+                const card =
                     document.createElement(
                         "div"
                     );
 
-                item.className =
+                card.className =
                     "project-card";
 
-                item.innerHTML = `
+                card.innerHTML = `
                     <div class="project-card-icon">
                         📁
                     </div>
@@ -1654,17 +1840,9 @@ async function chargerProjets() {
                     </div>
                 `;
 
-                const openButton =
-                    item.querySelector(
-                        ".open-project-button"
-                    );
-
-                const deleteButton =
-                    item.querySelector(
-                        ".danger"
-                    );
-
-                openButton?.addEventListener(
+                card.querySelector(
+                    ".open-project-button"
+                ).addEventListener(
                     "click",
                     () => {
                         selectionnerProjet(
@@ -1673,7 +1851,9 @@ async function chargerProjets() {
                     }
                 );
 
-                deleteButton?.addEventListener(
+                card.querySelector(
+                    ".danger"
+                ).addEventListener(
                     "click",
                     () => {
                         supprimerProjet(
@@ -1683,7 +1863,7 @@ async function chargerProjets() {
                 );
 
                 container.appendChild(
-                    item
+                    card
                 );
             }
         );
@@ -1716,7 +1896,9 @@ function ouvrirCreationProjet() {
 
     if (!modal) return;
 
-    modal.classList.add("open");
+    modal.classList.add(
+        "open"
+    );
 
     document.getElementById(
         "project-name"
@@ -1773,7 +1955,9 @@ async function creerProjet() {
         const data =
             await response
                 .json()
-                .catch(() => ({}));
+                .catch(
+                    () => ({})
+                );
 
         if (!response.ok) {
             afficherNotification(
@@ -1789,11 +1973,13 @@ async function creerProjet() {
         );
 
         if (nameInput) {
-            nameInput.value = "";
+            nameInput.value =
+                "";
         }
 
         if (contextInput) {
-            contextInput.value = "";
+            contextInput.value =
+                "";
         }
 
         chargerProjets();
@@ -1814,8 +2000,11 @@ async function creerProjet() {
     }
 }
 
-function selectionnerProjet(name) {
-    window.xyroProject = name;
+function selectionnerProjet(
+    name
+) {
+    window.xyroProject =
+        name;
 
     localStorage.setItem(
         PROJECT_KEY,
@@ -1829,7 +2018,9 @@ function selectionnerProjet(name) {
     );
 }
 
-async function supprimerProjet(name) {
+async function supprimerProjet(
+    name
+) {
     if (
         !confirm(
             `Supprimer le projet "${name}" ?`
@@ -1856,9 +2047,11 @@ async function supprimerProjet(name) {
         }
 
         if (
-            window.xyroProject === name
+            window.xyroProject ===
+            name
         ) {
-            window.xyroProject = "";
+            window.xyroProject =
+                "";
 
             localStorage.removeItem(
                 PROJECT_KEY
@@ -1899,17 +2092,22 @@ function afficherOutils() {
 // INTERNET
 // ======================================================
 
+function demanderInternet() {
+    ouvrirVue("internet");
+}
+
 function lancerRechercheInternet() {
-    const inputWeb =
+    const webInput =
         document.getElementById(
             "internet-input"
         );
 
     const query =
-        inputWeb?.value.trim();
+        webInput?.value.trim();
 
     if (!query) {
-        inputWeb?.focus();
+        webInput?.focus();
+
         return;
     }
 
@@ -1920,21 +2118,20 @@ function lancerRechercheInternet() {
     );
 }
 
-function rechercheRapide(query) {
-    const inputWeb =
+function rechercheRapide(
+    query
+) {
+    const webInput =
         document.getElementById(
             "internet-input"
         );
 
-    if (inputWeb) {
-        inputWeb.value = query;
+    if (webInput) {
+        webInput.value =
+            query;
     }
 
     lancerRechercheInternet();
-}
-
-function demanderInternet() {
-    ouvrirVue("internet");
 }
 
 // ======================================================
@@ -1958,7 +2155,7 @@ function demarrerDictation() {
 
     if (!Recognition) {
         afficherNotification(
-            "La reconnaissance vocale n'est pas disponible dans ce navigateur."
+            "La reconnaissance vocale n'est pas disponible ici."
         );
 
         return;
@@ -1966,63 +2163,83 @@ function demarrerDictation() {
 
     if (isListening) {
         recognition?.stop();
+
         return;
     }
 
     recognition =
         new Recognition();
 
-    recognition.lang = "fr-FR";
-    recognition.continuous = false;
-    recognition.interimResults = true;
+    recognition.lang =
+        "fr-FR";
+
+    recognition.continuous =
+        false;
+
+    recognition.interimResults =
+        true;
 
     isListening = true;
 
-    mettreAJourEtatVoix(true);
+    mettreAJourEtatVoix(
+        true
+    );
 
-    recognition.onresult = event => {
-        let transcript = "";
+    recognition.onresult =
+        event => {
+            let transcript =
+                "";
 
-        for (
-            let i = event.resultIndex;
-            i < event.results.length;
-            i++
-        ) {
-            transcript +=
-                event.results[i][0]
-                    .transcript;
-        }
+            for (
+                let i =
+                    event.resultIndex;
+                i <
+                    event.results.length;
+                i++
+            ) {
+                transcript +=
+                    event.results[i][0]
+                        .transcript;
+            }
 
-        if (input) {
-            input.value = transcript;
-            ajusterHauteurInput();
-        }
-    };
+            if (input) {
+                input.value =
+                    transcript;
 
-    recognition.onend = () => {
-        isListening = false;
+                ajusterHauteurInput();
+            }
+        };
 
-        mettreAJourEtatVoix(false);
+    recognition.onend =
+        () => {
+            isListening =
+                false;
 
-        if (input?.value.trim()) {
-            envoyer();
-        }
-    };
+            mettreAJourEtatVoix(
+                false
+            );
 
-    recognition.onerror = event => {
-        console.error(
-            "Erreur voix :",
-            event.error
-        );
+            if (
+                input?.value.trim()
+            ) {
+                envoyer();
+            }
+        };
 
-        isListening = false;
+    recognition.onerror =
+        error => {
+            console.error(
+                "Erreur voix :",
+                error
+            );
 
-        mettreAJourEtatVoix(false);
+            isListening =
+                false;
 
-        afficherNotification(
-            "La reconnaissance vocale a rencontré un problème."
-        );
-    };
+            mettreAJourEtatVoix(
+                false
+            );
+        };
 
     recognition.start();
 }
@@ -2050,12 +2267,10 @@ function mettreAJourEtatVoix(
             "voice-button"
         );
 
-    if (orb) {
-        orb.classList.toggle(
-            "listening",
-            listening
-        );
-    }
+    orb?.classList.toggle(
+        "listening",
+        listening
+    );
 
     if (status) {
         status.textContent =
@@ -2068,7 +2283,7 @@ function mettreAJourEtatVoix(
         description.textContent =
             listening
                 ? "Parle maintenant."
-                : "Appuie sur le bouton pour commencer la dictée.";
+                : "Appuie sur le bouton pour commencer.";
     }
 
     if (button) {
@@ -2096,12 +2311,20 @@ function lireTexte(text) {
 
     const utterance =
         new SpeechSynthesisUtterance(
-            text.slice(0, 1800)
+            text.slice(
+                0,
+                1800
+            )
         );
 
-    utterance.lang = "fr-FR";
-    utterance.rate = 0.98;
-    utterance.pitch = 1;
+    utterance.lang =
+        "fr-FR";
+
+    utterance.rate =
+        0.98;
+
+    utterance.pitch =
+        1;
 
     window.speechSynthesis.speak(
         utterance
@@ -2175,22 +2398,6 @@ function chargerParametresUI() {
     mettreAJourModeUI();
 }
 
-// ======================================================
-// QUITTER LES PARAMÈTRES
-// ======================================================
-
-function quitterParametres() {
-    ouvrirVue("home");
-
-    afficherNotification(
-        "Retour à l'accueil."
-    );
-}
-
-// ======================================================
-// SAUVEGARDER LES PARAMÈTRES
-// ======================================================
-
 function sauvegarderParametres() {
     const mode =
         document.getElementById(
@@ -2234,7 +2441,9 @@ function sauvegarderParametres() {
 
     localStorage.setItem(
         SETTINGS_KEY,
-        JSON.stringify(settings)
+        JSON.stringify(
+            settings
+        )
     );
 
     mettreAJourModeUI();
@@ -2266,6 +2475,18 @@ function mettreAJourModeUI() {
             names[settings.mode] ||
             "Normal"
         }`;
+}
+
+// ======================================================
+// QUITTER LES PARAMÈTRES
+// ======================================================
+
+function quitterParametres() {
+    ouvrirVue("home");
+
+    afficherNotification(
+        "Retour à l'accueil."
+    );
 }
 
 // ======================================================
@@ -2315,10 +2536,6 @@ function basculerTheme() {
     appliquerTheme();
 }
 
-appliquerTheme();
-
-chargerParametresUI();
-
 // ======================================================
 // NOTIFICATIONS
 // ======================================================
@@ -2330,7 +2547,7 @@ function afficherNotifications() {
 }
 
 // ======================================================
-// RACCOURCIS CLAVIER
+// RACCOURCIS
 // ======================================================
 
 document.addEventListener(
@@ -2338,7 +2555,8 @@ document.addEventListener(
     event => {
         if (
             event.ctrlKey &&
-            event.key.toLowerCase() === "k"
+            event.key.toLowerCase() ===
+                "k"
         ) {
             event.preventDefault();
 
@@ -2347,7 +2565,10 @@ document.addEventListener(
             input?.focus();
         }
 
-        if (event.key === "Escape") {
+        if (
+            event.key ===
+            "Escape"
+        ) {
             document
                 .querySelectorAll(
                     ".modal-overlay.open"
@@ -2364,7 +2585,7 @@ document.addEventListener(
 );
 
 // ======================================================
-// MODALE
+// FERMER UNE MODALE EN CLIQUANT DEHORS
 // ======================================================
 
 document.addEventListener(
@@ -2395,21 +2616,30 @@ window.xyroProject =
 // INITIALISATION
 // ======================================================
 
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-        chargerCompte();
+function initialiserXyro() {
+    appliquerTheme();
 
-        chargerHistorique();
+    chargerParametresUI();
 
-        chargerMemoire();
+    chargerCompte();
 
-        chargerParametresUI();
+    chargerHistorique();
 
-        mettreAJourModeUI();
+    mettreAJourModeUI();
 
-        console.log(
-            "🚀 Xyro.AI V2.0 initialisé."
-        );
-    }
-);
+    console.log(
+        "🚀 Xyro.AI V2.1 chargé."
+    );
+}
+
+if (
+    document.readyState ===
+    "loading"
+) {
+    document.addEventListener(
+        "DOMContentLoaded",
+        initialiserXyro
+    );
+} else {
+    initialiserXyro();
+}
