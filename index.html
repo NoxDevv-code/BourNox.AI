@@ -1,203 +1,1536 @@
-XY
-Xyro.AI Ton IA. Ton univers.
-＋ Nouvelle discussion
-⌂ Accueil 💬 Chat Nouveau 📁 Projets 🧠 Mémoire 🔧 Outils 🌐 Internet 🎙️ Voix
-✦
-Xyro.AI Pro Plus de puissance, plus de possibilités.
-→
-⚙️ Paramètres 🚪 Déconnexion
-Xyro.AI V2.0.0
-XY
-Xyro.AI
-Accueil
-☾ 🔔 XY Utilisateur
-XY
-Xyro.AI est en ligne
-Ton IA. Ton univers.
-Un assistant intelligent pour coder, apprendre, créer, jouer et construire tes projets.
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-💬 Commencer à discuter 📁 Mes projets
+    <title>Xyro.AI</title>
 
-💬
-Chat intelligent
-Pose tes questions et construis tes idées avec Xyro.
+    <link rel="stylesheet" href="style.css">
+</head>
 
- 
-🧠
-Mémoire
-Xyro peut conserver les informations que tu lui demandes de retenir.
+<body>
 
- 
-📁
-Projets
-Organise tes conversations et donne un contexte à tes projets.
+<div class="app">
 
- 
-🔧
-Outils
-Code, images, résumé, traduction et autres outils pratiques.
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
 
-ASSISTANT
-Xyro.AI
-● En ligne
-« Ensemble, on va plus loin. »
+        <div class="brand">
+            <div class="bn">XY</div>
 
-IA Opérationnelle
-Internet Disponible
-Mémoire Active
-Voix Disponible
-⚡ Raccourcis
-📚 Devoirs 🌐 Recherche 🖼️ Image 🎙️ Voix
-CONVERSATION
-Chat avec Xyro.AI
-＋ Nouveau ↻ Actualiser
-XY
-Salut 👋
-Je suis Xyro.AI. Qu'est-ce qu'on construit aujourd'hui ?
+            <div class="brand-text">
+                <strong>Xyro<span>.AI</span></strong>
+                <small>Ton IA. Ton univers.</small>
+            </div>
+        </div>
 
-＋ 
-Écris ton message à Xyro...
+        <button class="new-chat-btn"
+                onclick="nouvelleDiscussion()">
+            <span>＋</span>
+            Nouvelle discussion
+        </button>
 
- 🎙️ ➤
-Entrée pour envoyer · Ctrl + K pour écrire Mode normal
-📚 Devoirs 💡 Expliquer 📝 Résumer ✍️ Corriger 🌐 Internet 🖼️ Image
-ESPACE DE TRAVAIL
-Mes projets
-Garde un contexte séparé pour chacun de tes projets.
+        <nav class="main-nav">
 
-＋ Nouveau projet
-📁
-Chargement des projets...
-PERSONNALISATION
-Ma mémoire
-Les informations que Xyro a enregistrées à ta demande.
+            <button class="nav-btn active"
+                    data-view="home"
+                    onclick="ouvrirVue('home')">
+                <span>⌂</span>
+                <span class="nav-label">Accueil</span>
+            </button>
 
-↻ Actualiser
-🧠
-Comment fonctionne la mémoire ?
-Dis par exemple « souviens-toi que... » pour enregistrer une information.
+            <button class="nav-btn"
+                    data-view="chat"
+                    onclick="ouvrirVue('chat')">
+                <span>💬</span>
+                <span class="nav-label">Chat</span>
+                <b>Nouveau</b>
+            </button>
 
-🧠
-Chargement de la mémoire...
-XYRO TOOLS
-Outils
-Des raccourcis pour aller droit au but.
+            <button class="nav-btn"
+                    data-view="projects"
+                    onclick="ouvrirVue('projects')">
+                <span>📁</span>
+                <span class="nav-label">Projets</span>
+            </button>
 
+            <button class="nav-btn"
+                    data-view="memory"
+                    onclick="ouvrirVue('memory')">
+                <span>🧠</span>
+                <span class="nav-label">Mémoire</span>
+            </button>
 
-📚
-Assistant devoirs
-Comprendre un cours, résoudre un exercice ou réviser.
+            <button class="nav-btn"
+                    data-view="tools"
+                    onclick="ouvrirVue('tools')">
+                <span>🔧</span>
+                <span class="nav-label">Outils</span>
+            </button>
 
- 
-📝
-Résumé
-Transforme un contenu long en résumé clair.
+            <button class="nav-btn"
+                    data-view="internet"
+                    onclick="ouvrirVue('internet')">
+                <span>🌐</span>
+                <span class="nav-label">Internet</span>
+            </button>
 
- 
-💡
-Explication
-Obtiens une explication adaptée à ton niveau.
+            <button class="nav-btn"
+                    data-view="voice"
+                    onclick="ouvrirVue('voice')">
+                <span>🎙️</span>
+                <span class="nav-label">Voix</span>
+            </button>
 
- 
-✍️
-Correction
-Corrige un texte et améliore sa formulation.
+        </nav>
 
- 
-💻
-Programmation
-Python, JavaScript, HTML, CSS et autres technologies.
+        <div class="pro-card">
+            <div class="pro-icon">✦</div>
 
- 
-🌍
-Traduction
-Traduis rapidement un texte.
+            <div>
+                <strong>Xyro.AI Pro</strong>
+                <small>Plus de puissance, plus de possibilités.</small>
+            </div>
 
- 
-🎨
-Génération d'image
-Crée une image à partir d'une description.
+            <button onclick="afficherNotification('Xyro.AI Pro sera disponible prochainement.')">
+                →
+            </button>
+        </div>
 
- 
-🎙️
-Mode vocal
-Utilise ta voix pour parler avec Xyro.
+        <div class="sidebar-bottom">
 
-WEB SEARCH
-Internet
-Pose une question nécessitant des informations récentes.
+            <button class="nav-btn"
+                    data-view="settings"
+                    onclick="ouvrirVue('settings')">
+                <span>⚙️</span>
+                <span class="nav-label">Paramètres</span>
+            </button>
 
-● Recherche disponible
-🌐
-Recherche sur Internet
-Xyro peut utiliser la recherche web lorsque ta demande nécessite des informations actuelles.
+            <button class="logout-btn"
+                    onclick="deconnexion()">
+                🚪
+                <span class="nav-label">Déconnexion</span>
+            </button>
 
-Ex : Quelle est l'actualité aujourd'hui ?
- 🔎 Rechercher
-📰 Actualités 🌤️ Météo 💻 Tech
-VOICE MODE
-Mode vocal
-Parle à Xyro et écoute ses réponses.
+            <div class="version">
+                <strong>Xyro.AI</strong>
+                <small>V2.1.0</small>
+            </div>
 
-🎙️
-Prêt à écouter
-Appuie sur le bouton pour commencer la dictée.
+        </div>
 
-🎙️ Parler
- Lire automatiquement les réponses
-CONFIGURATION
-Paramètres
-Personnalise la façon dont Xyro te répond.
-
-← Quitter
-🤖 Mode de Xyro
-Choisis le contexte dans lequel tu utilises l'assistant.
+    </aside>
 
 
-Normal
-🎭 Personnalité
-Modifie le style général de Xyro.
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+
+            <div class="mobile-brand">
+                <div class="mobile-bn">XY</div>
+                <strong>Xyro<span>.AI</span></strong>
+            </div>
+
+            <div class="topbar-title"
+                 id="topbar-title">
+                Accueil
+            </div>
+
+            <div class="top-actions">
+
+                <button
+                    class="icon-btn"
+                    id="theme-toggle"
+                    onclick="basculerTheme()"
+                    title="Changer le thème">
+                    ☾
+                </button>
+
+                <button
+                    class="icon-btn"
+                    onclick="afficherNotifications()"
+                    title="Notifications">
+                    🔔
+                    <span class="notification-dot"></span>
+                </button>
+
+                <button
+                    class="profile-btn"
+                    onclick="ouvrirVue('settings')">
+
+                    <span class="avatar">XY</span>
+
+                    <span id="username-top">
+                        Utilisateur
+                    </span>
+
+                </button>
+
+            </div>
+
+        </header>
 
 
-Cool
-📏 Longueur des réponses
-Choisis la quantité de détails.
+        <!-- ================= ACCUEIL ================= -->
+
+        <section class="view active"
+                 id="view-home">
+
+            <div class="home-hero">
+
+                <div class="hero-glow"></div>
+
+                <div class="hero-logo">
+                    XY
+                </div>
+
+                <div class="status-pill">
+                    <span></span>
+                    Xyro.AI est en ligne
+                </div>
+
+                <h1>
+                    Ton IA.
+                    <span>Ton univers.</span>
+                </h1>
+
+                <p>
+                    Un assistant intelligent pour coder,
+                    apprendre, créer, jouer et construire
+                    tes projets.
+                </p>
+
+                <div class="hero-actions">
+
+                    <button
+                        class="primary-btn"
+                        onclick="ouvrirVue('chat')">
+                        💬 Commencer à discuter
+                    </button>
+
+                    <button
+                        class="secondary-btn"
+                        onclick="ouvrirVue('projects')">
+                        📁 Mes projets
+                    </button>
+
+                </div>
+
+            </div>
 
 
-Court
-🎨 Apparence
-Change le thème de l'interface.
+            <div class="feature-grid">
 
-🌙 Changer le thème
-XY
-COMPTE
-Utilisateur
-ID Xyro
+                <button
+                    class="feature-card"
+                    onclick="ouvrirVue('chat')">
 
-🚪 Déconnexion
-XY
-Xyro.AI
-● En ligne
-« Ensemble, on va plus loin. »
+                    <div class="feature-icon blue">
+                        💬
+                    </div>
 
-🧠 Mémoire
-Voir →
-🧠
-Mémoire active Chargement...
-⚡ Raccourcis
-📚 Devoirs 🌐 Internet 🖼️ Images 🎙️ Voix
-⚡ Système
-IA En ligne
-Internet Activé
-Mémoire Active
-Voix Prête
-×
-📁
-Nouveau projet
-Donne un nom et un contexte à ton projet.
+                    <h3>
+                        Chat intelligent
+                    </h3>
 
-Ex : Mon jeu Python
- 
-Décris le projet, ses objectifs, les technologies utilisées...
+                    <p>
+                        Pose tes questions et construis
+                        tes idées avec Xyro.
+                    </p>
 
- Créer le projet
+                </button>
+
+
+                <button
+                    class="feature-card"
+                    onclick="ouvrirVue('memory')">
+
+                    <div class="feature-icon purple">
+                        🧠
+                    </div>
+
+                    <h3>
+                        Mémoire
+                    </h3>
+
+                    <p>
+                        Xyro peut conserver les informations
+                        que tu lui demandes de retenir.
+                    </p>
+
+                </button>
+
+
+                <button
+                    class="feature-card"
+                    onclick="ouvrirVue('projects')">
+
+                    <div class="feature-icon cyan">
+                        📁
+                    </div>
+
+                    <h3>
+                        Projets
+                    </h3>
+
+                    <p>
+                        Organise tes conversations et donne
+                        un contexte à tes projets.
+                    </p>
+
+                </button>
+
+
+                <button
+                    class="feature-card"
+                    onclick="ouvrirVue('tools')">
+
+                    <div class="feature-icon orange">
+                        🔧
+                    </div>
+
+                    <h3>
+                        Outils
+                    </h3>
+
+                    <p>
+                        Code, images, résumé, traduction
+                        et autres outils pratiques.
+                    </p>
+
+                </button>
+
+            </div>
+
+
+            <div class="dashboard-grid">
+
+                <div class="dashboard-card large">
+
+                    <div class="card-heading">
+
+                        <div>
+                            <span class="eyebrow">
+                                ASSISTANT
+                            </span>
+
+                            <h2>
+                                Xyro.AI
+                            </h2>
+                        </div>
+
+                        <span class="online-badge">
+                            ● En ligne
+                        </span>
+
+                    </div>
+
+                    <p class="quote">
+                        « Ensemble, on va plus loin. »
+                    </p>
+
+                    <div class="system-bars">
+
+                        <div>
+                            <span>IA</span>
+                            <strong>
+                                Opérationnelle
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Internet</span>
+                            <strong>
+                                Disponible
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Mémoire</span>
+                            <strong>
+                                Active
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Voix</span>
+                            <strong>
+                                Disponible
+                            </strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="dashboard-card">
+
+                    <div class="card-heading">
+                        <h3>
+                            ⚡ Raccourcis
+                        </h3>
+                    </div>
+
+                    <div class="shortcut-list">
+
+                        <button onclick="preparerDevoirs()">
+                            📚 Devoirs
+                        </button>
+
+                        <button onclick="ouvrirVue('internet')">
+                            🌐 Recherche
+                        </button>
+
+                        <button onclick="ouvrirCreateurImage()">
+                            🖼️ Image
+                        </button>
+
+                        <button onclick="ouvrirVue('voice')">
+                            🎙️ Voix
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= CHAT ================= -->
+
+        <section class="view"
+                 id="view-chat">
+
+            <div class="chat-layout">
+
+                <div class="chat-header">
+
+                    <div>
+                        <span class="eyebrow">
+                            CONVERSATION
+                        </span>
+
+                        <h1>
+                            Chat avec Xyro.AI
+                        </h1>
+                    </div>
+
+                    <div class="chat-controls">
+
+                        <button
+                            class="small-btn"
+                            onclick="nouvelleDiscussion()">
+                            ＋ Nouveau
+                        </button>
+
+                        <button
+                            class="small-btn"
+                            onclick="chargerHistorique()">
+                            ↻ Actualiser
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="chat-area"
+                     id="chat-area">
+
+                    <div class="welcome-chat">
+
+                        <div class="welcome-icon">
+                            XY
+                        </div>
+
+                        <h2>
+                            Salut 👋
+                        </h2>
+
+                        <p>
+                            Je suis
+                            <strong>Xyro.AI</strong>.
+                            Qu'est-ce qu'on construit
+                            aujourd'hui ?
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="composer-wrap">
+
+                    <div class="composer">
+
+                        <button
+                            class="composer-tool"
+                            onclick="ouvrirCreateurImage()"
+                            title="Créer une image">
+                            ＋
+                        </button>
+
+                        <textarea
+                            id="msg"
+                            rows="1"
+                            placeholder="Écris ton message à Xyro..."
+                            autocomplete="off">
+                        </textarea>
+
+                        <button
+                            class="composer-tool"
+                            onclick="demarrerDictation()"
+                            title="Dictée vocale">
+                            🎙️
+                        </button>
+
+                        <button
+                            id="send"
+                            class="send-btn"
+                            onclick="envoyer()">
+                            ➤
+                        </button>
+
+                    </div>
+
+                    <div class="composer-footer">
+
+                        <span>
+                            Entrée pour envoyer ·
+                            Ctrl + K pour écrire
+                        </span>
+
+                        <span id="current-mode-label">
+                            Mode normal
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="quick-actions">
+
+                    <button onclick="envoyerCommande('Aide-moi à faire mes devoirs.')">
+                        📚 Devoirs
+                    </button>
+
+                    <button onclick="envoyerCommande('Explique-moi ce sujet simplement.')">
+                        💡 Expliquer
+                    </button>
+
+                    <button onclick="envoyerCommande('Résume ce contenu pour moi.')">
+                        📝 Résumer
+                    </button>
+
+                    <button onclick="envoyerCommande('Corrige mon texte.')">
+                        ✍️ Corriger
+                    </button>
+
+                    <button onclick="ouvrirVue('internet')">
+                        🌐 Internet
+                    </button>
+
+                    <button onclick="ouvrirCreateurImage()">
+                        🖼️ Image
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= PROJETS ================= -->
+
+        <section class="view"
+                 id="view-projects">
+
+            <div class="page-heading">
+
+                <div>
+
+                    <span class="eyebrow">
+                        ESPACE DE TRAVAIL
+                    </span>
+
+                    <h1>
+                        Mes projets
+                    </h1>
+
+                    <p>
+                        Garde un contexte séparé
+                        pour chacun de tes projets.
+                    </p>
+
+                </div>
+
+                <button
+                    class="primary-btn"
+                    onclick="ouvrirCreationProjet()">
+                    ＋ Nouveau projet
+                </button>
+
+            </div>
+
+
+            <div
+                id="projects-container"
+                class="project-grid">
+
+                <div class="empty-state">
+
+                    <div>📁</div>
+
+                    <h3>
+                        Chargement des projets...
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= MÉMOIRE ================= -->
+
+        <section class="view"
+                 id="view-memory">
+
+            <div class="page-heading">
+
+                <div>
+
+                    <span class="eyebrow">
+                        PERSONNALISATION
+                    </span>
+
+                    <h1>
+                        Ma mémoire
+                    </h1>
+
+                    <p>
+                        Les informations que Xyro
+                        a enregistrées à ta demande.
+                    </p>
+
+                </div>
+
+                <button
+                    class="secondary-btn"
+                    onclick="chargerMemoire()">
+                    ↻ Actualiser
+                </button>
+
+            </div>
+
+
+            <div class="memory-info">
+
+                <div class="memory-info-icon">
+                    🧠
+                </div>
+
+                <div>
+
+                    <strong>
+                        Comment fonctionne la mémoire ?
+                    </strong>
+
+                    <p>
+                        Dis par exemple
+                        « souviens-toi que... »
+                        pour enregistrer une information.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="memory-container"
+                class="memory-list">
+
+                <div class="empty-state">
+
+                    <div>🧠</div>
+
+                    <h3>
+                        Chargement de la mémoire...
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= OUTILS ================= -->
+
+        <section class="view"
+                 id="view-tools">
+
+            <div class="page-heading">
+
+                <div>
+
+                    <span class="eyebrow">
+                        XYRO TOOLS
+                    </span>
+
+                    <h1>
+                        Outils
+                    </h1>
+
+                    <p>
+                        Des raccourcis pour aller
+                        droit au but.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="tools-grid">
+
+                <button
+                    class="tool-card"
+                    onclick="preparerDevoirs()">
+
+                    <div class="tool-icon">
+                        📚
+                    </div>
+
+                    <h3>
+                        Assistant devoirs
+                    </h3>
+
+                    <p>
+                        Comprendre un cours,
+                        résoudre un exercice ou réviser.
+                    </p>
+
+                </button>
+
+
+                <button
+                    class="tool-card"
+                    onclick="envoyerCommande('/résume')">
+
+                    <div class="tool-icon">
+                        📝
+                    </div>
+
+                    <h3>
+                        Résumé
+                    </h3>
+
+                    <p>
+                        Transforme un contenu long
+                        en résumé clair.
+                    </p>
+
+                </button>
+
+
+                <button
+                    class="tool-card"
+                    onclick="envoyerCommande('/explique')">
+
+                    <div class="tool-icon">
+                        💡
+                    </div>
+
+                    <h3>
+                        Explication
+                    </h3>
+
+                    <p>
+                        Obtiens une explication
+                        adaptée à ton niveau.
+                    </p>
+
+                </button>
+
+
+                <button
+                    class="tool-card"
+                    onclick="envoyerCommande('/corrige')">
+
+                    <div class="tool-icon">
+                        ✍️
+                    </div>
+
+                    <h3>
+                        Correction
+                    </h3>
+
+                    <p>
+                        Corrige un texte et améliore
+                        sa formulation.
+                    </p>
+
+                </button>
+
+
+                <button
+                    class="tool-card"
+                    onclick="envoyerCommande('/code')">
+
+                    <div class="tool-icon">
+                        💻
+                    </div>
+
+                    <h3>
+                        Programmation
+                    </h3>
+
+                    <p>
+                        Python, JavaScript, HTML,
+                        CSS et autres technologies.
+                    </p>
+
+                </button>
+
+
+                <button
+                    class="tool-card"
+                    onclick="envoyerCommande('/traduis')">
+
+                    <div class="tool-icon">
+                        🌍
+                    </div>
+
+                    <h3>
+                        Traduction
+                    </h3>
+
+                    <p>
+                        Traduis rapidement un texte.
+                    </p>
+
+                </button>
+
+
+                <button
+                    class="tool-card"
+                    onclick="ouvrirCreateurImage()">
+
+                    <div class="tool-icon">
+                        🎨
+                    </div>
+
+                    <h3>
+                        Génération d'image
+                    </h3>
+
+                    <p>
+                        Crée une image à partir
+                        d'une description.
+                    </p>
+
+                </button>
+
+
+                <button
+                    class="tool-card"
+                    onclick="ouvrirVue('voice')">
+
+                    <div class="tool-icon">
+                        🎙️
+                    </div>
+
+                    <h3>
+                        Mode vocal
+                    </h3>
+
+                    <p>
+                        Utilise ta voix pour parler
+                        avec Xyro.
+                    </p>
+
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= INTERNET ================= -->
+
+        <section class="view"
+                 id="view-internet">
+
+            <div class="page-heading">
+
+                <div>
+
+                    <span class="eyebrow">
+                        WEB SEARCH
+                    </span>
+
+                    <h1>
+                        Internet
+                    </h1>
+
+                    <p>
+                        Pose une question nécessitant
+                        des informations récentes.
+                    </p>
+
+                </div>
+
+                <span class="online-badge">
+                    ● Recherche disponible
+                </span>
+
+            </div>
+
+
+            <div class="internet-panel">
+
+                <div class="internet-icon">
+                    🌐
+                </div>
+
+                <h2>
+                    Recherche sur Internet
+                </h2>
+
+                <p>
+                    Xyro peut utiliser la recherche web
+                    lorsque ta demande nécessite des
+                    informations actuelles.
+                </p>
+
+
+                <div class="internet-search">
+
+                    <input
+                        id="internet-input"
+                        placeholder="Ex : Quelle est l'actualité aujourd'hui ?"
+                        autocomplete="off">
+
+                    <button
+                        onclick="lancerRechercheInternet()">
+                        🔎 Rechercher
+                    </button>
+
+                </div>
+
+
+                <div class="internet-examples">
+
+                    <button
+                        onclick="rechercheRapide('Quelles sont les actualités importantes aujourd’hui ?')">
+                        📰 Actualités
+                    </button>
+
+                    <button
+                        onclick="rechercheRapide('Quel temps fera-t-il demain ?')">
+                        🌤️ Météo
+                    </button>
+
+                    <button
+                        onclick="rechercheRapide('Quelles sont les dernières nouveautés technologiques ?')">
+                        💻 Tech
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= VOIX ================= -->
+
+        <section class="view"
+                 id="view-voice">
+
+            <div class="page-heading">
+
+                <div>
+
+                    <span class="eyebrow">
+                        VOICE MODE
+                    </span>
+
+                    <h1>
+                        Mode vocal
+                    </h1>
+
+                    <p>
+                        Parle à Xyro et écoute
+                        ses réponses.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="voice-panel">
+
+                <div
+                    class="voice-orb"
+                    id="voice-orb">
+
+                    <span>
+                        🎙️
+                    </span>
+
+                </div>
+
+
+                <h2 id="voice-status">
+                    Prêt à écouter
+                </h2>
+
+
+                <p id="voice-description">
+                    Appuie sur le bouton pour
+                    commencer la dictée.
+                </p>
+
+
+                <button
+                    class="voice-button"
+                    id="voice-button"
+                    onclick="demarrerDictation()">
+                    🎙️ Parler
+                </button>
+
+
+                <div class="voice-options">
+
+                    <label>
+
+                        <input
+                            type="checkbox"
+                            id="voice-auto-read"
+                            checked
+                            onchange="sauvegarderParametres()">
+
+                        Lire automatiquement
+                        les réponses
+
+                    </label>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= PARAMÈTRES ================= -->
+
+        <section class="view"
+                 id="view-settings">
+
+            <div class="page-heading">
+
+                <div>
+
+                    <span class="eyebrow">
+                        CONFIGURATION
+                    </span>
+
+                    <h1>
+                        Paramètres
+                    </h1>
+
+                    <p>
+                        Personnalise la façon dont
+                        Xyro te répond.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="settings-grid">
+
+
+                <div class="settings-card">
+
+                    <h3>
+                        🤖 Mode de Xyro
+                    </h3>
+
+                    <p>
+                        Choisis le contexte dans lequel
+                        tu utilises l'assistant.
+                    </p>
+
+                    <select
+                        id="setting-mode"
+                        onchange="sauvegarderParametres()">
+
+                        <option value="normal">
+                            Normal
+                        </option>
+
+                        <option value="professeur">
+                            Professeur
+                        </option>
+
+                        <option value="developpeur">
+                            Développeur
+                        </option>
+
+                        <option value="gamer">
+                            Gamer
+                        </option>
+
+                        <option value="creatif">
+                            Créatif
+                        </option>
+
+                        <option value="nox">
+                            Nox
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="settings-card">
+
+                    <h3>
+                        🎭 Personnalité
+                    </h3>
+
+                    <p>
+                        Modifie le style général
+                        de Xyro.
+                    </p>
+
+                    <select
+                        id="setting-personality"
+                        onchange="sauvegarderParametres()">
+
+                        <option value="cool">
+                            Cool
+                        </option>
+
+                        <option value="serieux">
+                            Sérieux
+                        </option>
+
+                        <option value="drole">
+                            Drôle
+                        </option>
+
+                        <option value="pro">
+                            Professionnel
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="settings-card">
+
+                    <h3>
+                        📏 Longueur des réponses
+                    </h3>
+
+                    <p>
+                        Choisis la quantité
+                        de détails.
+                    </p>
+
+                    <select
+                        id="setting-style"
+                        onchange="sauvegarderParametres()">
+
+                        <option value="court">
+                            Court
+                        </option>
+
+                        <option value="detaille">
+                            Détaillé
+                        </option>
+
+                        <option value="debutant">
+                            Débutant
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="settings-card">
+
+                    <h3>
+                        🎨 Apparence
+                    </h3>
+
+                    <p>
+                        Change le thème de
+                        l'interface.
+                    </p>
+
+                    <button
+                        class="setting-button"
+                        onclick="basculerTheme()">
+
+                        🌙 Changer le thème
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- COMPTE -->
+
+            <div class="account-panel">
+
+                <div
+                    class="account-avatar"
+                    id="settings-avatar">
+                    XY
+                </div>
+
+
+                <div>
+
+                    <span class="eyebrow">
+                        COMPTE
+                    </span>
+
+                    <h2 id="settings-username">
+                        Utilisateur
+                    </h2>
+
+                    <p id="settings-public-id">
+                        ID Xyro
+                    </p>
+
+                </div>
+
+
+                <button
+                    class="logout-large"
+                    onclick="deconnexion()">
+
+                    🚪 Déconnexion
+
+                </button>
+
+            </div>
+
+
+            <!-- BOUTON QUITTER -->
+
+            <div
+                style="
+                    display:flex;
+                    justify-content:flex-end;
+                    margin-top:20px;
+                ">
+
+                <button
+                    class="secondary-btn"
+                    onclick="quitterParametres()">
+
+                    ← Quitter
+
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- ================= RIGHTBAR ================= -->
+
+    <aside class="rightbar">
+
+
+        <div class="right-card profile-card">
+
+            <div class="right-orb">
+                XY
+            </div>
+
+            <h2>
+                Xyro.AI
+            </h2>
+
+            <span class="online-badge">
+                ● En ligne
+            </span>
+
+            <p>
+                « Ensemble, on va plus loin. »
+            </p>
+
+        </div>
+
+
+        <div class="right-card">
+
+            <div class="right-card-title">
+
+                <h3>
+                    🧠 Mémoire
+                </h3>
+
+                <button
+                    onclick="ouvrirVue('memory')">
+                    Voir →
+                </button>
+
+            </div>
+
+
+            <div id="right-memory-preview">
+
+                <div class="mini-memory">
+
+                    <span>
+                        🧠
+                    </span>
+
+                    <div>
+
+                        <strong>
+                            Mémoire active
+                        </strong>
+
+                        <small>
+                            Chargement...
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="right-card">
+
+            <div class="right-card-title">
+
+                <h3>
+                    ⚡ Raccourcis
+                </h3>
+
+            </div>
+
+
+            <div class="right-shortcuts">
+
+                <button
+                    onclick="preparerDevoirs()">
+
+                    📚
+
+                    <span>
+                        Devoirs
+                    </span>
+
+                </button>
+
+
+                <button
+                    onclick="ouvrirVue('internet')">
+
+                    🌐
+
+                    <span>
+                        Internet
+                    </span>
+
+                </button>
+
+
+                <button
+                    onclick="ouvrirCreateurImage()">
+
+                    🖼️
+
+                    <span>
+                        Images
+                    </span>
+
+                </button>
+
+
+                <button
+                    onclick="ouvrirVue('voice')">
+
+                    🎙️
+
+                    <span>
+                        Voix
+                    </span>
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div class="right-card system-card">
+
+            <div class="right-card-title">
+
+                <h3>
+                    ⚡ Système
+                </h3>
+
+            </div>
+
+
+            <div class="system-status">
+
+                <div>
+                    <span>
+                        <i></i> IA
+                    </span>
+
+                    <strong>
+                        En ligne
+                    </strong>
+                </div>
+
+
+                <div>
+                    <span>
+                        <i></i> Internet
+                    </span>
+
+                    <strong>
+                        Activé
+                    </strong>
+                </div>
+
+
+                <div>
+                    <span>
+                        <i></i> Mémoire
+                    </span>
+
+                    <strong>
+                        Active
+                    </strong>
+                </div>
+
+
+                <div>
+                    <span>
+                        <i></i> Voix
+                    </span>
+
+                    <strong>
+                        Prête
+                    </strong>
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+</div>
+
+
+<!-- ================= MODALE PROJET ================= -->
+
+<div
+    class="modal-overlay"
+    id="project-modal">
+
+    <div class="modal">
+
+        <button
+            class="modal-close"
+            onclick="fermerModal('project-modal')">
+            ×
+        </button>
+
+
+        <div class="modal-icon">
+            📁
+        </div>
+
+
+        <h2>
+            Nouveau projet
+        </h2>
+
+
+        <p>
+            Donne un nom et un contexte
+            à ton projet.
+        </p>
+
+
+        <input
+            id="project-name"
+            placeholder="Ex : Mon jeu Python"
+            maxlength="80">
+
+
+        <textarea
+            id="project-context"
+            placeholder="Décris le projet, ses objectifs, les technologies utilisées..."
+            maxlength="4000">
+        </textarea>
+
+
+        <button
+            class="primary-btn full"
+            onclick="creerProjet()">
+
+            Créer le projet
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- ================= NOTIFICATIONS ================= -->
+
+<div
+    class="toast-container"
+    id="toast-container">
+</div>
+
+
+<!-- SCRIPT -->
+
+<script src="script.js"></script>
+
+</body>
+</html>
