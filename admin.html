@@ -1,137 +1,44 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xyro.AI • Admin</title>
-    <link rel="stylesheet" href="admin.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xyro.AI • Admin</title>
+<link rel="stylesheet" href="admin.css">
 </head>
 <body>
-<div class="admin-page">
-    <div class="admin-card">
-
-        <header class="admin-header">
-            <div class="brand">
-                <div class="mini-bn">XY</div>
-                <div>
-                    <h1>Xyro.AI <span>ADMIN</span></h1>
-                    <p>Centre de contrôle et supervision</p>
-                </div>
-            </div>
-            <div class="header-actions">
-                <div class="status"><span></span>Système opérationnel</div>
-                <button id="logoutAdmin">Déconnexion</button>
-            </div>
-        </header>
-
-        <section id="adminLogin" class="login-panel">
-            <div class="login-icon">🔐</div>
-            <h2>Connexion administrateur</h2>
-            <p class="login-subtitle">Accède au centre de contrôle de Xyro.AI.</p>
-            <label for="adminUsername">Identifiant</label>
-            <input id="adminUsername" autocomplete="username" placeholder="Identifiant admin">
-            <label for="adminPassword">Mot de passe</label>
-            <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Mot de passe admin">
-            <button id="adminLoginBtn" class="primary-btn">Se connecter <span>→</span></button>
-            <p id="adminError"></p>
-        </section>
-
-        <section id="dashboard" class="hidden">
-            <div class="dashboard-title">
-                <div>
-                    <div class="eyebrow">XYRO CONTROL CENTER</div>
-                    <h2>Tableau de bord</h2>
-                    <p>Surveille les comptes, alertes et activités.</p>
-                </div>
-                <div class="live-badge"><span></span>LIVE</div>
-            </div>
-
-            <div class="admin-stats">
-                <div class="admin-stat"><span>👥</span><strong id="statUsers">0</strong><small>Utilisateurs</small></div>
-                <div class="admin-stat"><span>🚨</span><strong id="statAlerts">0</strong><small>Alertes ouvertes</small></div>
-                <div class="admin-stat"><span>🟢</span><strong>ONLINE</strong><small>État du système</small></div>
-                <div class="admin-stat"><span>🧠</span><strong>IA</strong><small>Moteur Xyro</small></div>
-                <div class="admin-stat"><span>🛡️</span><strong>ADMIN</strong><small>Accès sécurisé</small></div>
-            </div>
-
-            <section class="admin-alerts">
-                <div class="admin-section-title">
-                    <div>
-                        <h2>🚨 Alertes de sécurité</h2>
-                        <p>Les alertes sont des signaux à vérifier, pas des sanctions automatiques.</p>
-                    </div>
-                    <div class="section-chip">SECURITY</div>
-                </div>
-                <div id="alertsList"></div>
-            </section>
-
-            <div class="admin-search">
-                <div class="search-icon">⌕</div>
-                <input id="userIdInput" placeholder="Rechercher par ID ou pseudo...">
-                <button id="searchUser">Rechercher</button>
-                <button id="clearSearch" class="admin-small-button">Effacer</button>
-            </div>
-
-            <div class="admin-columns">
-                <section class="users-panel">
-                    <div class="admin-section-title">
-                        <div>
-                            <h2>👥 Utilisateurs</h2>
-                            <p id="usersCount">0 utilisateur</p>
-                        </div>
-                        <div class="section-chip">ACCOUNTS</div>
-                    </div>
-                    <div id="usersList"></div>
-                </section>
-
-                <section class="details-panel">
-                    <div class="admin-section-title">
-                        <div>
-                            <h2>📊 Données du compte</h2>
-                            <p id="selectedUserLabel">Aucun utilisateur sélectionné.</p>
-                        </div>
-                        <div class="section-chip">DETAILS</div>
-                    </div>
-                    <div id="userDetails">
-                        <div class="admin-empty details-empty"><div>👤</div><p>Sélectionne un utilisateur pour afficher ses données.</p></div>
-                    </div>
-                </section>
-            </div>
-        </section>
-    </div>
+<div class="admin-shell">
+<header class="topbar">
+  <div class="brand"><div class="brand-icon">XY</div><div><strong>Xyro.AI</strong><span>Administration</span></div></div>
+  <div class="top-actions"><span id="adminStatus" class="status offline">● Hors ligne</span><button id="logoutAdmin" class="ghost-btn">Déconnexion</button></div>
+</header>
+<main>
+<section id="adminLogin" class="login-card">
+  <div class="login-icon">🔐</div><h1>Console administrateur</h1><p>Accès sécurisé au tableau de bord Xyro.AI.</p>
+  <input id="adminUsername" autocomplete="username" placeholder="Identifiant admin">
+  <input id="adminPassword" autocomplete="current-password" type="password" placeholder="Mot de passe admin">
+  <button id="adminLoginBtn" class="primary-btn">Se connecter</button><p id="adminError" class="error"></p>
+</section>
+<section id="dashboard" class="hidden">
+  <div class="welcome"><div><p class="eyebrow">XYRO.AI / ADMIN</p><h1>Tableau de bord</h1><p>Tous les comptes enregistrés, leurs données et leur statut.</p></div><button id="refreshAll" class="ghost-btn">↻ Actualiser</button></div>
+  <div class="stats-grid">
+    <div class="stat-card"><span>👥</span><small>Utilisateurs</small><strong id="statUsers">0</strong></div>
+    <div class="stat-card"><span>💬</span><small>Messages</small><strong id="statMessages">0</strong></div>
+    <div class="stat-card"><span>🧠</span><small>Mémoires</small><strong id="statMemories">0</strong></div>
+    <div class="stat-card"><span>📁</span><small>Projets</small><strong id="statProjects">0</strong></div>
+    <div class="stat-card warning"><span>🚨</span><small>Alertes ouvertes</small><strong id="statAlerts">0</strong></div>
+  </div>
+  <section class="panel">
+    <div class="panel-head"><div><h2>👥 Tous les utilisateurs</h2><p>La liste vient directement de la base de données, même si personne n'est connecté.</p></div><div class="search-box"><input id="userSearchInput" placeholder="Pseudo ou ID Xyro..."><button id="searchUser">🔍</button></div></div>
+    <div id="usersList" class="users-grid"><p class="muted">Chargement...</p></div>
+  </section>
+  <div class="content-grid">
+    <section class="panel"><div class="panel-head"><div><h2>🚨 Alertes</h2><p>Signaux à vérifier manuellement.</p></div></div><div id="alertsList" class="alerts-list"><p class="muted">Chargement...</p></div></section>
+    <section class="panel"><div class="panel-head"><div><h2>👤 Compte sélectionné</h2><p id="selectedUserLabel">Aucun utilisateur sélectionné.</p></div></div><div id="userDetails" class="details"><div class="empty-state"><div>👤</div><p>Sélectionne un utilisateur.</p></div></div></section>
+  </div>
+</section>
+</main>
 </div>
-
-<!-- MODALE DE BAN -->
-<div id="banModal" class="ban-modal hidden">
-    <div class="ban-box">
-        <button id="closeBanModal" class="ban-close">×</button>
-        <div class="ban-icon">🚫</div>
-        <div class="eyebrow">MODERATION</div>
-        <h2>Bannir un utilisateur</h2>
-        <p id="banTarget" class="ban-target"></p>
-
-        <label for="banDuration">Durée du bannissement</label>
-        <select id="banDuration">
-            <option value="10m">10 minutes</option>
-            <option value="1h">1 heure</option>
-            <option value="1d">1 jour</option>
-            <option value="7d">7 jours</option>
-            <option value="30d">30 jours</option>
-            <option value="permanent">♾️ Permanent</option>
-        </select>
-
-        <label for="banReason">Raison</label>
-        <textarea id="banReason" maxlength="500" placeholder="Raison du bannissement..."></textarea>
-
-        <p id="banError" class="admin-error"></p>
-
-        <div class="ban-actions">
-            <button id="cancelBan" class="admin-small-button">Annuler</button>
-            <button id="confirmBan" class="danger-btn">🚫 Confirmer le ban</button>
-        </div>
-    </div>
-</div>
-
 <script src="admin.js"></script>
 </body>
 </html>

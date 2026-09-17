@@ -1,329 +1,81 @@
-const loginBox = document.getElementById("adminLogin");
-const dashboard = document.getElementById("dashboard");
-const errorBox = document.getElementById("adminError");
-const usersList = document.getElementById("usersList");
-const details = document.getElementById("userDetails");
-const searchInput = document.getElementById("userIdInput");
-const selectedUserLabel = document.getElementById("selectedUserLabel");
-
-let allUsers = [];
-let selectedUserId = null;
+const $ = id => document.getElementById(id);
+const loginBox = $("adminLogin"), dashboard = $("dashboard"), errorBox = $("adminError");
+const usersList = $("usersList"), details = $("userDetails");
 
 async function api(url, options = {}) {
-    const response = await fetch(url, options);
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Erreur serveur.");
-    return data;
+  const response = await fetch(url, options);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "Erreur serveur");
+  return data;
+}
+function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c])); }
+function formatNumber(value) { return Number(value || 0).toLocaleString("fr-FR"); }
+function formatBanDate(value) { if (!value) return "Permanent"; const d = new Date(value + "Z"); return Number.isNaN(d.getTime()) ? value : d.toLocaleString("fr-FR"); }
+function setOnline(online) { const s = $("adminStatus"); s.className = "status " + (online ? "online" : "offline"); s.textContent = online ? "● Xyro en ligne" : "● Hors ligne"; }
+
+async function loadStats() {
+  const data = await api("/api/admin/stats");
+  $("statUsers").textContent = formatNumber(data.users); $("statMessages").textContent = formatNumber(data.messages);
+  $("statMemories").textContent = formatNumber(data.memories); $("statProjects").textContent = formatNumber(data.projects);
+  $("statAlerts").textContent = formatNumber(data.open_alerts); setOnline(data.status === "online");
 }
 
-function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>"']/g, char => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;",
-        '"': "&quot;", "'": "&#039;"
-    }[char]));
+function userStatus(user) {
+  if (user.banned) return `<span class="badge banned">🔴 BANNI${user.ban_expires_at ? " · jusqu'au " + escapeHtml(formatBanDate(user.ban_expires_at)) : " · À VIE"}</span>`;
+  return `<span class="badge active">🟢 ACTIF</span>`;
 }
-
-function formatBan(user) {
-    if (!user.banned) return "";
-    if (user.permanent) return "♾️ BANNI • permanent";
-    return "🔴 BANNI • jusqu'au " + escapeHtml(user.expires_at || "date inconnue");
-}
-
-function updateStats() {
-    document.getElementById("statUsers").textContent = allUsers.length;
-}
-
-async function loadAlerts() {
-    try {
-        const data = await api("/api/admin/alerts");
-        const box = document.getElementById("alertsList");
-        const alerts = data.alerts || [];
-        document.getElementById("statAlerts").textContent =
-            alerts.filter(alert => !alert.reviewed).length;
-
-        if (!alerts.length) {
-            box.innerHTML = `<div class="admin-empty"><div>✅</div><p>Aucune alerte pour le moment.</p></div>`;
-            return;
-        }
-
-        box.innerHTML = alerts.map(alert => `
-            <div class="admin-alert ${alert.reviewed ? "reviewed" : ""}">
-                <div><strong>${alert.severity === "high" ? "🔴" : "🟠"} ${escapeHtml(alert.category)}</strong></div>
-                <div><strong>ID utilisateur :</strong> ${escapeHtml(alert.user_id)}</div>
-                <div><strong>Date :</strong> ${escapeHtml(alert.created_at)}</div>
-                <div><strong>Message signalé :</strong> ${escapeHtml(alert.message_excerpt)}</div>
-                ${alert.reviewed
-                    ? `<small>✓ Alerte vérifiée</small>`
-                    : `<button class="admin-small-button" onclick="reviewAlert(${Number(alert.id)})">Marquer comme vérifiée</button>`}
-            </div>
-        `).join("");
-    } catch (error) {
-        document.getElementById("alertsList").innerHTML =
-            `<p class="admin-error">⚠️ ${escapeHtml(error.message)}</p>`;
-    }
-}
-
-async function reviewAlert(id) {
-    try {
-        await api("/api/admin/alerts/" + id + "/review", {method: "POST"});
-        await loadAlerts();
-    } catch (error) {
-        alert("Erreur : " + error.message);
-    }
-}
-
-async function loadUsers() {
-    try {
-        const data = await api("/api/admin/users");
-        allUsers = data.users || [];
-        updateStats();
-        renderUsers(allUsers);
-    } catch (error) {
-        usersList.innerHTML = `<p class="admin-error">⚠️ ${escapeHtml(error.message)}</p>`;
-    }
-}
-
 function renderUsers(users) {
-    usersList.innerHTML = "";
-    document.getElementById("usersCount").textContent =
-        users.length + " utilisateur" + (users.length > 1 ? "s" : "");
-
-    if (!users.length) {
-        usersList.innerHTML = `<div class="admin-empty"><div>🔎</div><p>Aucun utilisateur trouvé.</p></div>`;
-        return;
-    }
-
-    users.forEach(user => {
-        const button = document.createElement("button");
-        button.className = "admin-user" + (user.banned ? " user-banned" : "");
-        button.innerHTML = `
-            <span class="user-main">
-                <strong>${escapeHtml(user.username)}</strong>
-                <small>${escapeHtml(user.public_id)}</small>
-            </span>
-            <span class="user-status ${user.banned ? "banned" : "active"}">
-                ${user.banned ? "🔴 BANNI" : "🟢 ACTIF"}
-            </span>
-            <span class="user-arrow">›</span>
-        `;
-        button.onclick = () => loadUser(user.public_id);
-        usersList.appendChild(button);
-    });
+  usersList.innerHTML = "";
+  if (!users.length) { usersList.innerHTML = `<div class="empty-state"><div>🔎</div><p>Aucun utilisateur trouvé.</p></div>`; return; }
+  users.forEach(user => {
+    const button = document.createElement("button"); button.className = "user-card" + (user.banned ? " is-banned" : "");
+    button.innerHTML = `<div class="avatar">${escapeHtml(user.username.charAt(0).toUpperCase())}</div><div class="user-main"><strong>${escapeHtml(user.username)}</strong><span>${escapeHtml(user.public_id)}</span><small>Créé le ${escapeHtml(user.created_at)}</small>${userStatus(user)}</div><span class="arrow">›</span>`;
+    button.onclick = () => loadUser(user.public_id); usersList.appendChild(button);
+  });
 }
-
-function searchUsers() {
-    const query = searchInput.value.trim().toLowerCase();
-    if (!query) return renderUsers(allUsers);
-
-    renderUsers(allUsers.filter(user =>
-        String(user.username || "").toLowerCase().includes(query) ||
-        String(user.public_id || "").toLowerCase().includes(query)
-    ));
+async function loadUsers(query = "") {
+  try { const data = query ? await api("/api/admin/search-users?q=" + encodeURIComponent(query)) : await api("/api/admin/users"); renderUsers(data.users || []); }
+  catch (e) { usersList.innerHTML = `<p class="error">⚠️ ${escapeHtml(e.message)}</p>`; }
 }
+async function loadAlerts() {
+  try {
+    const data = await api("/api/admin/alerts"), box = $("alertsList");
+    if (!data.alerts.length) { box.innerHTML = `<div class="empty-state"><div>✅</div><p>Aucune alerte pour le moment.</p></div>`; return; }
+    box.innerHTML = data.alerts.map(a => `<article class="alert ${a.reviewed ? "reviewed" : ""}"><div class="alert-title"><strong>${a.severity === "high" ? "🔴" : "🟠"} ${escapeHtml(a.category)}</strong>${a.reviewed ? `<span class="reviewed-badge">✓ Vérifiée</span>` : ""}</div><div class="alert-meta">${escapeHtml(a.user_id)} · ${escapeHtml(a.created_at)}</div><p>${escapeHtml(a.message_excerpt)}</p>${a.reviewed ? "" : `<button class="small-btn" onclick="reviewAlert(${Number(a.id)})">Marquer comme vérifiée</button>`}</article>`).join("");
+  } catch (e) { $("alertsList").innerHTML = `<p class="error">⚠️ ${escapeHtml(e.message)}</p>`; }
+}
+async function reviewAlert(id) { try { await api(`/api/admin/alerts/${id}/review`, {method:"POST"}); await Promise.all([loadAlerts(), loadStats()]); } catch(e) { alert("Erreur : " + e.message); } }
 
+function banPanel(user) {
+  if (user.is_admin) return `<div class="admin-note">🛡️ Compte administrateur. Ce compte ne peut pas être banni depuis cette console.</div>`;
+  if (user.banned) return `<div class="ban-current"><strong>🔴 Compte actuellement banni</strong><span>${user.ban_expires_at ? "Fin : " + escapeHtml(formatBanDate(user.ban_expires_at)) : "Bannissement permanent"}</span>${user.ban_reason ? `<p>Raison : ${escapeHtml(user.ban_reason)}</p>` : ""}<button class="unban-btn" onclick="unbanUser('${escapeHtml(user.public_id)}')">Débannir ce compte</button></div>`;
+  return `<div class="ban-box"><h4>🚫 Bannir ce compte</h4><div class="ban-row"><select id="banDuration"><option value="10m">10 minutes</option><option value="1h">1 heure</option><option value="1d">1 jour</option><option value="7d">7 jours</option><option value="30d">30 jours</option><option value="permanent">À vie</option></select><input id="banReason" maxlength="500" placeholder="Raison du bannissement (facultatif)"><button class="ban-btn" onclick="banUser('${escapeHtml(user.public_id)}')">Bannir</button></div></div>`;
+}
 async function loadUser(id) {
-    try {
-        selectedUserId = id;
-        selectedUserLabel.textContent = "Chargement...";
-        const data = await api("/api/admin/user/" + encodeURIComponent(id));
-
-        const grouped = {};
-        (data.messages || []).forEach(message => {
-            if (!grouped[message.session_id]) grouped[message.session_id] = [];
-            grouped[message.session_id].push(message);
-        });
-
-        const messageCount = data.messages?.length || 0;
-        const memoryCount = data.memories?.length || 0;
-        const projectCount = data.projects?.length || 0;
-        const ban = data.ban;
-
-        selectedUserLabel.textContent =
-            data.user.username + " • " + data.user.public_id;
-
-        details.innerHTML = `
-            <div class="admin-profile ${ban ? "profile-banned" : ""}">
-                <div class="admin-profile-avatar">
-                    ${escapeHtml(data.user.username.charAt(0).toUpperCase())}
-                </div>
-                <div class="profile-main">
-                    <h3>${escapeHtml(data.user.username)}</h3>
-                    <p>ID : ${escapeHtml(data.user.public_id)}</p>
-                    <small>Créé le ${escapeHtml(data.user.created_at)}</small>
-                    <div class="account-status ${ban ? "is-banned" : "is-active"}">
-                        ${ban ? (ban.permanent ? "🔴 Banni définitivement" : "🔴 Banni temporairement") : "🟢 Compte actif"}
-                    </div>
-                </div>
-            </div>
-
-            <div class="moderation-card">
-                <div>
-                    <strong>${ban ? "🚫 Utilisateur banni" : "🛡️ Modération du compte"}</strong>
-                    <small>${ban ? escapeHtml(ban.reason || "Aucune raison indiquée.") : "Gérer l'accès à Xyro.AI."}</small>
-                    ${ban && !ban.permanent && ban.expires_at ? `<small>Fin : ${escapeHtml(ban.expires_at)}</small>` : ""}
-                </div>
-                ${ban
-                    ? `<button class="unban-btn" onclick="unbanUser('${escapeHtml(data.user.public_id)}')">🔓 Débannir</button>`
-                    : `<button class="ban-btn" onclick="openBanModal('${escapeHtml(data.user.public_id)}', '${escapeHtml(data.user.username)}')">🚫 Bannir</button>`}
-            </div>
-
-            <div class="admin-user-stats">
-                <div><strong>${messageCount}</strong><small>Messages</small></div>
-                <div><strong>${memoryCount}</strong><small>Mémoires</small></div>
-                <div><strong>${projectCount}</strong><small>Projets</small></div>
-            </div>
-
-            <h3>💬 Conversations</h3>
-            <div>
-                ${Object.entries(grouped).map(([sessionId, messages], index) => `
-                    <details class="admin-conversation">
-                        <summary>Conversation ${index + 1}<small>${escapeHtml(sessionId)}</small></summary>
-                        <div>
-                            ${messages.map(message => `
-                                <div class="admin-message ${message.role === "user" ? "from-user" : "from-bot"}">
-                                    <strong>${message.role === "user" ? "Utilisateur" : "Xyro.AI"}</strong>
-                                    <div>${escapeHtml(message.content)}</div>
-                                    <small>${escapeHtml(message.created_at)}</small>
-                                </div>
-                            `).join("")}
-                        </div>
-                    </details>
-                `).join("") || `<p>Aucune conversation.</p>`}
-            </div>
-
-            <h3>🧠 Mémoire</h3>
-            <div>
-                ${(data.memories || []).map(memory => `
-                    <div class="admin-memory">
-                        <strong>🧠 Souvenir</strong>
-                        <p>${escapeHtml(memory.content)}</p>
-                        <small>${escapeHtml(memory.created_at)}</small>
-                    </div>
-                `).join("") || `<p>Aucune mémoire.</p>`}
-            </div>
-
-            <h3>📁 Projets</h3>
-            <div>
-                ${(data.projects || []).map(project => `
-                    <div class="admin-project">
-                        <strong>📁 ${escapeHtml(project.name)}</strong>
-                        <p>${escapeHtml(project.context || "Aucun contexte.")}</p>
-                        <small>Mis à jour : ${escapeHtml(project.updated_at)}</small>
-                    </div>
-                `).join("") || `<p>Aucun projet.</p>`}
-            </div>
-        `;
-    } catch (error) {
-        selectedUserLabel.textContent = "Erreur";
-        details.innerHTML = `<p class="admin-error">⚠️ ${escapeHtml(error.message)}</p>`;
-    }
+  try {
+    $("selectedUserLabel").textContent = "Chargement...";
+    const data = await api("/api/admin/user/" + encodeURIComponent(id)), user = data.user;
+    $("selectedUserLabel").textContent = `${user.username} · ${user.public_id}`;
+    const grouped = {}; (data.messages || []).forEach(m => { (grouped[m.session_id] ||= []).push(m); });
+    details.innerHTML = `<div class="profile-summary"><div class="big-avatar">${escapeHtml(user.username.charAt(0).toUpperCase())}</div><div><h3>${escapeHtml(user.username)}</h3><p>${escapeHtml(user.public_id)}</p><small>Créé le ${escapeHtml(user.created_at)}</small><div>${userStatus(user)}</div></div></div>${banPanel(user)}<div class="mini-stats"><div><strong>${formatNumber(user.message_count)}</strong><span>Messages</span></div><div><strong>${formatNumber(user.memory_count)}</strong><span>Mémoires</span></div><div><strong>${formatNumber(user.project_count)}</strong><span>Projets</span></div></div><h3 class="section-title">💬 Conversations</h3><div class="conversations">${Object.entries(grouped).map(([sid,msgs],i)=>`<details class="conversation"><summary><strong>Conversation ${i+1}</strong><span>${escapeHtml(sid)}</span></summary><div class="messages">${msgs.map(m=>`<div class="admin-message ${m.role === "user" ? "from-user" : "from-bot"}"><b>${m.role === "user" ? "Utilisateur" : "Xyro.AI"}</b><div>${escapeHtml(m.content)}</div><small>${escapeHtml(m.created_at)}</small></div>`).join("")}</div></details>`).join("") || `<p class="muted">Aucune conversation.</p>`}</div><h3 class="section-title">🧠 Mémoire</h3><div class="memory-list">${(data.memories||[]).map(m=>`<div class="memory-item"><span>${escapeHtml(m.content)}</span><small>${escapeHtml(m.created_at)}</small></div>`).join("") || `<p class="muted">Aucune mémoire.</p>`}</div><h3 class="section-title">📁 Projets</h3><div class="project-list">${(data.projects||[]).map(p=>`<div class="project-item"><strong>${escapeHtml(p.name)}</strong><p>${escapeHtml(p.context||"Aucun contexte.")}</p><small>Mis à jour : ${escapeHtml(p.updated_at)}</small></div>`).join("") || `<p class="muted">Aucun projet.</p>`}</div>`;
+  } catch(e) { $("selectedUserLabel").textContent = "Erreur"; details.innerHTML = `<p class="error">⚠️ ${escapeHtml(e.message)}</p>`; }
 }
-
-const banModal = document.getElementById("banModal");
-const banTarget = document.getElementById("banTarget");
-const banError = document.getElementById("banError");
-const banDuration = document.getElementById("banDuration");
-const banReason = document.getElementById("banReason");
-
-function openBanModal(id, username) {
-    selectedUserId = id;
-    banTarget.textContent = username + " • " + id;
-    banDuration.value = "1h";
-    banReason.value = "";
-    banError.textContent = "";
-    banModal.classList.remove("hidden");
+async function banUser(id) {
+  const duration = $("banDuration")?.value, reason = $("banReason")?.value.trim() || ""; if (!duration) return;
+  if (!confirm("Bannir ce compte ?")) return;
+  try { await api(`/api/admin/user/${encodeURIComponent(id)}/ban`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({duration, reason})}); await Promise.all([loadUsers($("userSearchInput").value.trim()), loadStats()]); await loadUser(id); }
+  catch(e) { alert("Erreur : " + e.message); }
 }
-
-function closeBanModal() {
-    banModal.classList.add("hidden");
-}
-
-async function confirmBan() {
-    if (!selectedUserId) return;
-
-    banError.textContent = "";
-    try {
-        await api("/api/admin/user/" + encodeURIComponent(selectedUserId) + "/ban", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                duration: banDuration.value,
-                reason: banReason.value.trim()
-            })
-        });
-
-        closeBanModal();
-        await loadUsers();
-        await loadUser(selectedUserId);
-    } catch (error) {
-        banError.textContent = "⚠️ " + error.message;
-    }
-}
-
 async function unbanUser(id) {
-    if (!confirm("Débannir cet utilisateur ?")) return;
-
-    try {
-        await api("/api/admin/user/" + encodeURIComponent(id) + "/unban", {
-            method: "POST"
-        });
-        await loadUsers();
-        await loadUser(id);
-    } catch (error) {
-        alert("Erreur : " + error.message);
-    }
+  if (!confirm("Débannir ce compte ?")) return;
+  try { await api(`/api/admin/user/${encodeURIComponent(id)}/unban`, {method:"POST"}); await Promise.all([loadUsers($("userSearchInput").value.trim()), loadStats()]); await loadUser(id); }
+  catch(e) { alert("Erreur : " + e.message); }
 }
+window.reviewAlert = reviewAlert; window.banUser = banUser; window.unbanUser = unbanUser;
+async function refreshAll() { await Promise.all([loadStats(), loadUsers($("userSearchInput").value.trim()), loadAlerts()]); }
 
-document.getElementById("adminLoginBtn").onclick = async () => {
-    errorBox.textContent = "";
-    try {
-        await api("/api/admin/login", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                username: document.getElementById("adminUsername").value.trim(),
-                password: document.getElementById("adminPassword").value
-            })
-        });
-        loginBox.classList.add("hidden");
-        dashboard.classList.remove("hidden");
-        await loadUsers();
-        await loadAlerts();
-    } catch (error) {
-        errorBox.textContent = "⚠️ " + error.message;
-    }
-};
-
-document.getElementById("adminPassword").addEventListener("keydown", event => {
-    if (event.key === "Enter") document.getElementById("adminLoginBtn").click();
-});
-
-document.getElementById("searchUser").onclick = searchUsers;
-searchInput.addEventListener("keydown", event => {
-    if (event.key === "Enter") searchUsers();
-});
-
-document.getElementById("clearSearch").onclick = () => {
-    searchInput.value = "";
-    renderUsers(allUsers);
-};
-
-document.getElementById("logoutAdmin").onclick = async () => {
-    try {
-        await api("/api/admin/logout", {method: "POST"});
-    } finally {
-        dashboard.classList.add("hidden");
-        loginBox.classList.remove("hidden");
-        selectedUserId = null;
-        details.innerHTML = `<div class="admin-empty"><div>👤</div><p>Sélectionne un utilisateur.</p></div>`;
-        selectedUserLabel.textContent = "Aucun utilisateur sélectionné.";
-    }
-};
-
-document.getElementById("closeBanModal").onclick = closeBanModal;
-document.getElementById("cancelBan").onclick = closeBanModal;
-document.getElementById("confirmBan").onclick = confirmBan;
-
-banModal.addEventListener("click", event => {
-    if (event.target === banModal) closeBanModal();
-});
+$("adminLoginBtn").onclick = async () => { errorBox.textContent = ""; try { await api("/api/admin/login", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({username:$("adminUsername").value.trim(), password:$("adminPassword").value})}); loginBox.classList.add("hidden"); dashboard.classList.remove("hidden"); await refreshAll(); } catch(e) { errorBox.textContent = "⚠️ " + e.message; } };
+$("adminPassword").addEventListener("keydown", e => { if(e.key === "Enter") $("adminLoginBtn").click(); });
+$("searchUser").onclick = () => loadUsers($("userSearchInput").value.trim()); $("userSearchInput").addEventListener("keydown", e => { if(e.key === "Enter") $("searchUser").click(); });
+$("refreshAll").onclick = refreshAll;
+$("logoutAdmin").onclick = async () => { try { await api("/api/admin/logout", {method:"POST"}); } finally { dashboard.classList.add("hidden"); loginBox.classList.remove("hidden"); setOnline(false); } };
