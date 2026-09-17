@@ -22,10 +22,24 @@ const PROJECT_KEY = "xyro_project";
 // SESSION
 // ======================================================
 
+function creerSessionId() {
+    if (
+        window.crypto &&
+        typeof window.crypto.randomUUID === "function"
+    ) {
+        return window.crypto.randomUUID();
+    }
+
+    return (
+        Date.now().toString(36) +
+        Math.random().toString(36).slice(2)
+    );
+}
+
 let sessionId = localStorage.getItem(SESSION_KEY);
 
 if (!sessionId) {
-    sessionId = crypto.randomUUID();
+    sessionId = creerSessionId();
     localStorage.setItem(SESSION_KEY, sessionId);
 }
 
@@ -80,9 +94,8 @@ function escapeHTML(text) {
 }
 
 function afficherNotification(message) {
-    const container = document.getElementById(
-        "toast-container"
-    );
+    const container =
+        document.getElementById("toast-container");
 
     if (!container) return;
 
@@ -97,7 +110,9 @@ function afficherNotification(message) {
         toast.style.opacity = "0";
         toast.style.transform = "translateY(8px)";
 
-        setTimeout(() => toast.remove(), 200);
+        setTimeout(() => {
+            toast.remove();
+        }, 200);
     }, 3000);
 }
 
@@ -108,7 +123,8 @@ function scrollChat() {
 }
 
 function fermerModal(id) {
-    const modal = document.getElementById(id);
+    const modal =
+        document.getElementById(id);
 
     if (modal) {
         modal.classList.remove("open");
@@ -121,52 +137,68 @@ function fermerModal(id) {
 
 async function chargerCompte() {
     try {
-        const response = await fetch("/api/me");
+        const response =
+            await fetch("/api/me");
 
         if (!response.ok) {
             window.location.href = "/login";
             return null;
         }
 
-        const data = await response.json();
+        const data =
+            await response.json();
 
         if (data.user) {
             const username =
-                data.user.username || "Utilisateur";
+                data.user.username ||
+                "Utilisateur";
 
-            const avatar = username
-                .slice(0, 2)
-                .toUpperCase();
+            const avatar =
+                username
+                    .slice(0, 2)
+                    .toUpperCase();
 
             const topAvatar =
                 document.querySelector(".avatar");
 
             const topUsername =
-                document.getElementById("username-top");
+                document.getElementById(
+                    "username-top"
+                );
 
             const settingsUsername =
-                document.getElementById("settings-username");
+                document.getElementById(
+                    "settings-username"
+                );
 
             const settingsAvatar =
-                document.getElementById("settings-avatar");
+                document.getElementById(
+                    "settings-avatar"
+                );
 
             const publicId =
-                document.getElementById("settings-public-id");
+                document.getElementById(
+                    "settings-public-id"
+                );
 
             if (topAvatar) {
-                topAvatar.textContent = avatar;
+                topAvatar.textContent =
+                    avatar;
             }
 
             if (topUsername) {
-                topUsername.textContent = username;
+                topUsername.textContent =
+                    username;
             }
 
             if (settingsUsername) {
-                settingsUsername.textContent = username;
+                settingsUsername.textContent =
+                    username;
             }
 
             if (settingsAvatar) {
-                settingsAvatar.textContent = avatar;
+                settingsAvatar.textContent =
+                    avatar;
             }
 
             if (publicId) {
@@ -178,8 +210,13 @@ async function chargerCompte() {
         }
 
         return data;
+
     } catch (error) {
-        console.error("Erreur compte :", error);
+        console.error(
+            "Erreur compte :",
+            error
+        );
+
         return null;
     }
 }
@@ -207,7 +244,7 @@ async function deconnexion() {
 }
 
 // ======================================================
-// NAVIGATION V2
+// NAVIGATION
 // ======================================================
 
 const viewTitles = {
@@ -222,9 +259,10 @@ const viewTitles = {
 };
 
 function ouvrirVue(viewName) {
-    const view = document.getElementById(
-        `view-${viewName}`
-    );
+    const view =
+        document.getElementById(
+            `view-${viewName}`
+        );
 
     if (!view) return;
 
@@ -234,20 +272,23 @@ function ouvrirVue(viewName) {
 
     view.classList.add("active");
 
-    $$(".nav-btn[data-view]").forEach(button => {
-        button.classList.toggle(
-            "active",
-            button.dataset.view === viewName
-        );
-    });
+    $$(".nav-btn[data-view]")
+        .forEach(button => {
+            button.classList.toggle(
+                "active",
+                button.dataset.view === viewName
+            );
+        });
 
-    const title = document.getElementById(
-        "topbar-title"
-    );
+    const title =
+        document.getElementById(
+            "topbar-title"
+        );
 
     if (title) {
         title.textContent =
-            viewTitles[viewName] || "Xyro.AI";
+            viewTitles[viewName] ||
+            "Xyro.AI";
     }
 
     if (viewName === "memory") {
@@ -259,7 +300,9 @@ function ouvrirVue(viewName) {
     }
 
     if (viewName === "chat") {
-        setTimeout(() => input?.focus(), 100);
+        setTimeout(() => {
+            input?.focus();
+        }, 100);
     }
 
     if (viewName === "settings") {
@@ -276,7 +319,7 @@ function ouvrirVue(viewName) {
 // ======================================================
 
 function nouvelleDiscussion() {
-    sessionId = crypto.randomUUID();
+    sessionId = creerSessionId();
 
     localStorage.setItem(
         SESSION_KEY,
@@ -291,7 +334,9 @@ function nouvelleDiscussion() {
                     XY
                 </div>
 
-                <h2>Nouvelle discussion 👋</h2>
+                <h2>
+                    Nouvelle discussion 👋
+                </h2>
 
                 <p>
                     Une nouvelle conversation avec
@@ -316,15 +361,17 @@ function nouvelleDiscussion() {
 function ajouterMessageUser(message) {
     if (!chatArea) return;
 
-    const welcome = chatArea.querySelector(
-        ".welcome-chat"
-    );
+    const welcome =
+        chatArea.querySelector(
+            ".welcome-chat"
+        );
 
     if (welcome) {
         welcome.remove();
     }
 
-    const el = document.createElement("div");
+    const el =
+        document.createElement("div");
 
     el.className = "message user";
     el.textContent = message;
@@ -334,22 +381,32 @@ function ajouterMessageUser(message) {
     scrollChat();
 }
 
-function ajouterMessageBot(message) {
+function ajouterMessageBot(
+    message,
+    options = {}
+) {
     if (!chatArea) return;
 
-    const welcome = chatArea.querySelector(
-        ".welcome-chat"
-    );
+    const {
+        speak = true
+    } = options;
+
+    const welcome =
+        chatArea.querySelector(
+            ".welcome-chat"
+        );
 
     if (welcome) {
         welcome.remove();
     }
 
-    const el = document.createElement("div");
+    const el =
+        document.createElement("div");
 
     el.className = "message bot";
 
-    const title = document.createElement("div");
+    const title =
+        document.createElement("div");
 
     title.className = "bot-title";
 
@@ -371,6 +428,7 @@ function ajouterMessageBot(message) {
     scrollChat();
 
     if (
+        speak &&
         settings.autoRead &&
         "speechSynthesis" in window
     ) {
@@ -381,9 +439,12 @@ function ajouterMessageBot(message) {
 }
 
 function ajouterChargement() {
-    if (!chatArea) return null;
+    if (!chatArea) {
+        return null;
+    }
 
-    const el = document.createElement("div");
+    const el =
+        document.createElement("div");
 
     el.className =
         "message bot bournox-loading";
@@ -431,7 +492,9 @@ function ajouterChargement() {
 // ENVOI CHAT
 // ======================================================
 
-async function envoyer(messageForce = null) {
+async function envoyer(
+    messageForce = null
+) {
     if (!input || !send) return;
 
     const message =
@@ -452,48 +515,53 @@ async function envoyer(messageForce = null) {
 
     ajouterMessageUser(message);
 
-    const loading = ajouterChargement();
+    const loading =
+        ajouterChargement();
 
     try {
-        const response = await fetch("/chat", {
-            method: "POST",
+        const response =
+            await fetch("/chat", {
+                method: "POST",
 
-            headers: {
-                "Content-Type":
-                    "application/json"
-            },
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
 
-            body: JSON.stringify({
-                message,
+                body: JSON.stringify({
+                    message,
 
-                session_id:
-                    sessionId,
+                    session_id:
+                        sessionId,
 
-                mode:
-                    settings.mode,
+                    mode:
+                        settings.mode,
 
-                response_style:
-                    settings.response_style,
+                    response_style:
+                        settings.response_style,
 
-                personality:
-                    settings.personality,
+                    personality:
+                        settings.personality,
 
-                project:
-                    window.xyroProject || ""
-            })
-        });
+                    project:
+                        window.xyroProject ||
+                        ""
+                })
+            });
 
         const data =
-            await response.json().catch(
-                () => ({})
-            );
+            await response
+                .json()
+                .catch(() => ({}));
 
         if (loading) {
             loading.remove();
         }
 
         if (response.status === 401) {
-            window.location.href = "/login";
+            window.location.href =
+                "/login";
+
             return;
         }
 
@@ -518,7 +586,8 @@ async function envoyer(messageForce = null) {
         }
 
         if (data.session_id) {
-            sessionId = data.session_id;
+            sessionId =
+                data.session_id;
 
             localStorage.setItem(
                 SESSION_KEY,
@@ -544,8 +613,10 @@ async function envoyer(messageForce = null) {
         ajouterMessageBot(
             "⚠️ Impossible de contacter le cerveau de Xyro."
         );
+
     } finally {
         send.disabled = false;
+
         input.focus();
     }
 }
@@ -554,6 +625,7 @@ function envoyerCommande(message) {
     if (!message) return;
 
     ouvrirVue("chat");
+
     envoyer(message);
 }
 
@@ -599,18 +671,22 @@ async function chargerHistorique() {
     if (!chatArea) return;
 
     try {
-        const response = await fetch(
-            `/history?session_id=${encodeURIComponent(sessionId)}`
-        );
+        const response =
+            await fetch(
+                `/history?session_id=${encodeURIComponent(sessionId)}`
+            );
 
         if (response.status === 401) {
-            window.location.href = "/login";
+            window.location.href =
+                "/login";
+
             return;
         }
 
         if (!response.ok) return;
 
-        const data = await response.json();
+        const data =
+            await response.json();
 
         const messages =
             data.messages ||
@@ -631,7 +707,9 @@ async function chargerHistorique() {
                         XY
                     </div>
 
-                    <h2>Nouvelle discussion 👋</h2>
+                    <h2>
+                        Nouvelle discussion 👋
+                    </h2>
 
                     <p>
                         Commence une conversation avec Xyro.AI.
@@ -644,15 +722,22 @@ async function chargerHistorique() {
         }
 
         messages.forEach(item => {
-            if (item.role === "user") {
+            if (
+                item.role === "user"
+            ) {
                 ajouterMessageUser(
                     item.content
                 );
-            } else if (
+            }
+
+            else if (
                 item.role === "assistant"
             ) {
                 ajouterMessageBot(
-                    item.content
+                    item.content,
+                    {
+                        speak: false
+                    }
                 );
             }
         });
@@ -722,44 +807,57 @@ function detecterLangage(code) {
     return "Code";
 }
 
-function coloriserCode(code, langage) {
-    let result = escapeHTML(code);
+function coloriserCode(
+    code,
+    langage
+) {
+    let result =
+        escapeHTML(code);
 
-    result = result.replace(
-        /(["'`])(?:\\.|(?!\1).)*?\1/g,
-        '<span class="code-value">$&</span>'
-    );
+    result =
+        result.replace(
+            /(["'`])(?:\\.|(?!\1).)*?\1/g,
+            '<span class="code-value">$&</span>'
+        );
 
-    result = result.replace(
-        /\b(def|class|import|from|return|if|else|elif|for|while|in|True|False|None|const|let|var|function|new|async|await|public|private|static|void|SELECT|FROM|WHERE|INSERT|UPDATE|DELETE)\b/g,
-        '<span class="code-keyword">$1</span>'
-    );
+    result =
+        result.replace(
+            /\b(def|class|import|from|return|if|else|elif|for|while|in|True|False|None|const|let|var|function|new|async|await|public|private|static|void|SELECT|FROM|WHERE|INSERT|UPDATE|DELETE)\b/g,
+            '<span class="code-keyword">$1</span>'
+        );
 
-    result = result.replace(
-        /\b([a-zA-Z_$][\w$]*)\s*(?=\()/g,
-        '<span class="code-function">$1</span>'
-    );
+    result =
+        result.replace(
+            /\b([a-zA-Z_$][\w$]*)\s*(?=\()/g,
+            '<span class="code-function">$1</span>'
+        );
 
     if (langage === "HTML") {
-        result = result.replace(
-            /(&lt;\/?)([\w-]+)/g,
-            '$1<span class="code-tag">$2</span>'
-        );
+        result =
+            result.replace(
+                /(&lt;\/?)([\w-]+)/g,
+                '$1<span class="code-tag">$2</span>'
+            );
     }
 
     return result;
 }
 
-function creerBlocCode(code, langage) {
+function creerBlocCode(
+    code,
+    langage
+) {
     const wrapper =
         document.createElement("div");
 
-    wrapper.className = "bournox-code";
+    wrapper.className =
+        "bournox-code";
 
     const header =
         document.createElement("div");
 
-    header.className = "code-header";
+    header.className =
+        "code-header";
 
     const language =
         document.createElement("span");
@@ -767,7 +865,8 @@ function creerBlocCode(code, langage) {
     language.className =
         "code-language";
 
-    language.textContent = langage;
+    language.textContent =
+        langage;
 
     const actions =
         document.createElement("div");
@@ -909,7 +1008,9 @@ function creerBlocCode(code, langage) {
             link.download =
                 `xyro-code.${extension}`;
 
-            document.body.appendChild(link);
+            document.body.appendChild(
+                link
+            );
 
             link.click();
 
@@ -952,7 +1053,9 @@ function obtenirExtension(langage) {
     }
 }
 
-function afficherMessageFormate(message) {
+function afficherMessageFormate(
+    message
+) {
     const container =
         document.createElement("div");
 
@@ -960,7 +1063,7 @@ function afficherMessageFormate(message) {
         "message-text";
 
     const regex =
-        /```(\w+)?\n?([\s\S]*?)```/g;
+        /```([\w#+.-]+)?\n?([\s\S]*?)```/g;
 
     let dernierIndex = 0;
     let match;
@@ -976,16 +1079,21 @@ function afficherMessageFormate(message) {
 
         if (texteAvant.trim()) {
             const texte =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
             texte.innerHTML =
-                escapeHTML(texteAvant)
-                    .replace(
-                        /\n/g,
-                        "<br>"
-                    );
+                escapeHTML(
+                    texteAvant
+                ).replace(
+                    /\n/g,
+                    "<br>"
+                );
 
-            container.appendChild(texte);
+            container.appendChild(
+                texte
+            );
         }
 
         const code =
@@ -1007,20 +1115,27 @@ function afficherMessageFormate(message) {
     }
 
     const texteFinal =
-        message.slice(dernierIndex);
+        message.slice(
+            dernierIndex
+        );
 
     if (texteFinal.trim()) {
         const texte =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         texte.innerHTML =
-            escapeHTML(texteFinal)
-                .replace(
-                    /\n/g,
-                    "<br>"
-                );
+            escapeHTML(
+                texteFinal
+            ).replace(
+                /\n/g,
+                "<br>"
+            );
 
-        container.appendChild(texte);
+        container.appendChild(
+            texte
+        );
     }
 
     return container;
@@ -1132,7 +1247,9 @@ function ouvrirCreateurImage() {
     scrollChat();
 }
 
-async function genererImage(prompt) {
+async function genererImage(
+    prompt
+) {
     ajouterMessageUser(
         "🖼️ Crée cette image : " +
         prompt
@@ -1178,7 +1295,9 @@ async function genererImage(prompt) {
             return;
         }
 
-        afficherImage(data.image);
+        afficherImage(
+            data.image
+        );
 
     } catch (error) {
         console.error(
@@ -1198,12 +1317,14 @@ function afficherImage(base64) {
     const el =
         document.createElement("div");
 
-    el.className = "message bot";
+    el.className =
+        "message bot";
 
     const title =
         document.createElement("div");
 
-    title.className = "bot-title";
+    title.className =
+        "bot-title";
 
     title.innerHTML = `
         <span class="mini-bn">XY</span>
@@ -1221,10 +1342,17 @@ function afficherImage(base64) {
     image.alt =
         "Image générée par Xyro.AI";
 
-    image.style.maxWidth = "100%";
-    image.style.borderRadius = "14px";
-    image.style.display = "block";
-    image.style.marginTop = "8px";
+    image.style.maxWidth =
+        "100%";
+
+    image.style.borderRadius =
+        "14px";
+
+    image.style.display =
+        "block";
+
+    image.style.marginTop =
+        "8px";
 
     el.append(
         title,
@@ -1253,7 +1381,9 @@ async function chargerMemoire() {
             await fetch("/memory");
 
         if (response.status === 401) {
-            window.location.href = "/login";
+            window.location.href =
+                "/login";
+
             return;
         }
 
@@ -1293,60 +1423,66 @@ async function chargerMemoire() {
             return;
         }
 
-        memories.forEach(memory => {
-            const content =
-                typeof memory === "string"
-                    ? memory
-                    : (
-                        memory.content ||
-                        memory.memory ||
-                        ""
+        memories.forEach(
+            memory => {
+                const content =
+                    typeof memory === "string"
+                        ? memory
+                        : (
+                            memory.content ||
+                            memory.memory ||
+                            ""
+                        );
+
+                const date =
+                    typeof memory === "object"
+                        ? (
+                            memory.created_at ||
+                            ""
+                        )
+                        : "";
+
+                const item =
+                    document.createElement(
+                        "div"
                     );
 
-            const date =
-                typeof memory === "object"
-                    ? (
-                        memory.created_at ||
-                        ""
-                    )
-                    : "";
+                item.className =
+                    "memory-item";
 
-            const item =
-                document.createElement("div");
+                item.innerHTML = `
+                    <div class="memory-item-icon">
+                        🧠
+                    </div>
 
-            item.className =
-                "memory-item";
+                    <div class="memory-item-content">
 
-            item.innerHTML = `
-                <div class="memory-item-icon">
-                    🧠
-                </div>
+                        <strong>
+                            Souvenir enregistré
+                        </strong>
 
-                <div class="memory-item-content">
+                        <p>
+                            ${escapeHTML(content)}
+                        </p>
 
-                    <strong>
-                        Souvenir enregistré
-                    </strong>
+                    </div>
 
-                    <p>
-                        ${escapeHTML(content)}
-                    </p>
+                    ${
+                        date
+                            ? `
+                                <span class="memory-date">
+                                    ${escapeHTML(date)}
+                                </span>
+                              `
+                            : ""
+                    }
+                `;
 
-                </div>
-
-                ${
-                    date
-                        ? `
-                            <span class="memory-date">
-                                ${escapeHTML(date)}
-                            </span>
-                          `
-                        : ""
-                }
-            `;
-
-            container.appendChild(item);
-        });
+                container.appendChild(
+                    item
+                );
+            }
+        );
 
         mettreAJourMemoireDroite(
             memories.length
@@ -1361,6 +1497,7 @@ async function chargerMemoire() {
         container.innerHTML = `
             <div class="empty-state">
                 <div>⚠️</div>
+
                 <h3>
                     Impossible de charger la mémoire
                 </h3>
@@ -1369,7 +1506,9 @@ async function chargerMemoire() {
     }
 }
 
-function mettreAJourMemoireDroite(count) {
+function mettreAJourMemoireDroite(
+    count
+) {
     const preview =
         document.getElementById(
             "right-memory-preview"
@@ -1424,7 +1563,9 @@ async function chargerProjets() {
             await fetch("/projects");
 
         if (response.status === 401) {
-            window.location.href = "/login";
+            window.location.href =
+                "/login";
+
             return;
         }
 
@@ -1465,54 +1606,87 @@ async function chargerProjets() {
             return;
         }
 
-        projects.forEach(project => {
-            const name =
-                project.name ||
-                "Projet";
+        projects.forEach(
+            project => {
+                const name =
+                    project.name ||
+                    "Projet";
 
-            const context =
-                project.context ||
-                "Aucun contexte défini.";
+                const context =
+                    project.context ||
+                    "Aucun contexte défini.";
 
-            const item =
-                document.createElement("div");
+                const item =
+                    document.createElement(
+                        "div"
+                    );
 
-            item.className =
-                "project-card";
+                item.className =
+                    "project-card";
 
-            item.innerHTML = `
-                <div class="project-card-icon">
-                    📁
-                </div>
+                item.innerHTML = `
+                    <div class="project-card-icon">
+                        📁
+                    </div>
 
-                <h3>
-                    ${escapeHTML(name)}
-                </h3>
+                    <h3>
+                        ${escapeHTML(name)}
+                    </h3>
 
-                <p>
-                    ${escapeHTML(context)}
-                </p>
+                    <p>
+                        ${escapeHTML(context)}
+                    </p>
 
-                <div class="project-card-footer">
+                    <div class="project-card-footer">
 
-                    <button
-                        onclick="selectionnerProjet(${JSON.stringify(name)})"
-                    >
-                        Ouvrir
-                    </button>
+                        <button
+                            class="open-project-button"
+                        >
+                            Ouvrir
+                        </button>
 
-                    <button
-                        class="danger"
-                        onclick="supprimerProjet(${JSON.stringify(name)})"
-                    >
-                        Supprimer
-                    </button>
+                        <button
+                            class="danger"
+                        >
+                            Supprimer
+                        </button>
 
-                </div>
-            `;
+                    </div>
+                `;
 
-            container.appendChild(item);
-        });
+                const openButton =
+                    item.querySelector(
+                        ".open-project-button"
+                    );
+
+                const deleteButton =
+                    item.querySelector(
+                        ".danger"
+                    );
+
+                openButton?.addEventListener(
+                    "click",
+                    () => {
+                        selectionnerProjet(
+                            name
+                        );
+                    }
+                );
+
+                deleteButton?.addEventListener(
+                    "click",
+                    () => {
+                        supprimerProjet(
+                            name
+                        );
+                    }
+                );
+
+                container.appendChild(
+                    item
+                );
+            }
+        );
 
     } catch (error) {
         console.error(
@@ -1522,10 +1696,13 @@ async function chargerProjets() {
 
         container.innerHTML = `
             <div class="empty-state">
+
                 <div>⚠️</div>
+
                 <h3>
                     Impossible de charger les projets
                 </h3>
+
             </div>
         `;
     }
@@ -1561,7 +1738,8 @@ async function creerProjet() {
         nameInput?.value.trim();
 
     const context =
-        contextInput?.value.trim() || "";
+        contextInput?.value.trim() ||
+        "";
 
     if (!name) {
         afficherNotification(
@@ -1606,7 +1784,9 @@ async function creerProjet() {
             return;
         }
 
-        fermerModal("project-modal");
+        fermerModal(
+            "project-modal"
+        );
 
         if (nameInput) {
             nameInput.value = "";
@@ -1646,10 +1826,6 @@ function selectionnerProjet(name) {
 
     afficherNotification(
         `Projet "${name}" sélectionné.`
-    );
-
-    envoyer(
-        `Je travaille maintenant sur le projet "${name}".`
     );
 }
 
@@ -1813,7 +1989,8 @@ function demarrerDictation() {
             i++
         ) {
             transcript +=
-                event.results[i][0].transcript;
+                event.results[i][0]
+                    .transcript;
         }
 
         if (input) {
@@ -1850,7 +2027,9 @@ function demarrerDictation() {
     recognition.start();
 }
 
-function mettreAJourEtatVoix(listening) {
+function mettreAJourEtatVoix(
+    listening
+) {
     const orb =
         document.getElementById(
             "voice-orb"
@@ -1929,7 +2108,9 @@ function lireTexte(text) {
     );
 }
 
-function nettoyerTextePourVoix(text) {
+function nettoyerTextePourVoix(
+    text
+) {
     return String(text)
         .replace(
             /```[\s\S]*?```/g,
@@ -1993,6 +2174,22 @@ function chargerParametresUI() {
 
     mettreAJourModeUI();
 }
+
+// ======================================================
+// QUITTER LES PARAMÈTRES
+// ======================================================
+
+function quitterParametres() {
+    ouvrirVue("home");
+
+    afficherNotification(
+        "Retour à l'accueil."
+    );
+}
+
+// ======================================================
+// SAUVEGARDER LES PARAMÈTRES
+// ======================================================
 
 function sauvegarderParametres() {
     const mode =
@@ -2065,7 +2262,10 @@ function mettreAJourModeUI() {
     };
 
     label.textContent =
-        `Mode ${names[settings.mode] || "Normal"}`;
+        `Mode ${
+            names[settings.mode] ||
+            "Normal"
+        }`;
 }
 
 // ======================================================
@@ -2153,10 +2353,11 @@ document.addEventListener(
                     ".modal-overlay.open"
                 )
                 .forEach(
-                    modal =>
+                    modal => {
                         modal.classList.remove(
                             "open"
-                        )
+                        );
+                    }
                 );
         }
     }
@@ -2202,6 +2403,8 @@ document.addEventListener(
         chargerHistorique();
 
         chargerMemoire();
+
+        chargerParametresUI();
 
         mettreAJourModeUI();
 
