@@ -3,276 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Xyro.AI - Admin</title>
-
-    <link rel="stylesheet" href="style.css">
+    <title>Xyro.AI • Admin</title>
+    <link rel="stylesheet" href="admin.css">
 </head>
 
 <body>
-
 <div class="admin-page">
 
     <div class="admin-card">
 
-        <!-- ==============================
-             HEADER
-        =============================== -->
-
-        <div class="admin-header">
-
-            <div>
-
-                <div class="mini-bn">
-                    XY
+        <!-- HEADER -->
+        <header class="admin-header">
+            <div class="brand">
+                <div class="mini-bn">XY</div>
+                <div>
+                    <h1>Xyro.AI <span>ADMIN</span></h1>
+                    <p>Centre de contrôle et supervision</p>
                 </div>
-
-                <h1>
-                    Xyro.AI
-                    <span>Admin</span>
-                </h1>
-
-                <p>
-                    Gestion des comptes et consultation autorisée des données.
-                </p>
-
             </div>
 
-            <button id="logoutAdmin">
-                Déconnexion
-            </button>
+            <div class="header-actions">
+                <div class="status">
+                    <span></span>
+                    Système opérationnel
+                </div>
+                <button id="logoutAdmin">Déconnexion</button>
+            </div>
+        </header>
 
-        </div>
+        <!-- LOGIN -->
+        <section id="adminLogin" class="login-panel">
+            <div class="login-icon">🔐</div>
+            <h2>Connexion administrateur</h2>
+            <p class="login-subtitle">
+                Accède au centre de contrôle de Xyro.AI.
+            </p>
 
+            <label for="adminUsername">Identifiant</label>
+            <input id="adminUsername" autocomplete="username" placeholder="Identifiant admin">
 
-        <!-- ==============================
-             CONNEXION ADMIN
-        =============================== -->
+            <label for="adminPassword">Mot de passe</label>
+            <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Mot de passe admin">
 
-        <section id="adminLogin">
-
-            <h2>
-                🔐 Connexion administrateur
-            </h2>
-
-            <input
-                id="adminUsername"
-                placeholder="Identifiant admin"
-                autocomplete="username"
-            >
-
-            <input
-                id="adminPassword"
-                type="password"
-                placeholder="Mot de passe admin"
-                autocomplete="current-password"
-            >
-
-            <button id="adminLoginBtn">
-                Se connecter
+            <button id="adminLoginBtn" class="primary-btn">
+                Se connecter <span>→</span>
             </button>
 
             <p id="adminError"></p>
-
         </section>
 
-
-        <!-- ==============================
-             DASHBOARD
-        =============================== -->
-
+        <!-- DASHBOARD -->
         <section id="dashboard" class="hidden">
 
+            <div class="dashboard-title">
+                <div>
+                    <div class="eyebrow">XYRO CONTROL CENTER</div>
+                    <h2>Tableau de bord</h2>
+                    <p>Surveille les comptes, alertes et activités.</p>
+                </div>
 
-            <!-- ==========================
-                 STATISTIQUES
-            =========================== -->
+                <div class="live-badge">
+                    <span></span>
+                    LIVE
+                </div>
+            </div>
 
-            <section class="admin-stats">
-
+            <!-- STATS VISUELLES -->
+            <div class="admin-stats">
                 <div class="admin-stat">
                     <span>👥</span>
-                    <strong id="statUsers">0</strong>
+                    <strong id="statUsers">—</strong>
                     <small>Utilisateurs</small>
                 </div>
 
                 <div class="admin-stat">
-                    <span>💬</span>
-                    <strong id="statMessages">0</strong>
-                    <small>Messages</small>
+                    <span>🚨</span>
+                    <strong id="statAlerts">—</strong>
+                    <small>Alertes</small>
+                </div>
+
+                <div class="admin-stat">
+                    <span>🟢</span>
+                    <strong>ONLINE</strong>
+                    <small>État du système</small>
                 </div>
 
                 <div class="admin-stat">
                     <span>🧠</span>
-                    <strong id="statMemories">0</strong>
-                    <small>Mémoires</small>
+                    <strong>IA</strong>
+                    <small>Moteur Xyro</small>
                 </div>
 
                 <div class="admin-stat">
-                    <span>📁</span>
-                    <strong id="statProjects">0</strong>
-                    <small>Projets</small>
+                    <span>🛡️</span>
+                    <strong>ADMIN</strong>
+                    <small>Accès sécurisé</small>
                 </div>
+            </div>
 
-                <div class="admin-stat">
-                    <span>🚨</span>
-                    <strong id="statAlerts">0</strong>
-                    <small>Alertes</small>
-                </div>
-
-            </section>
-
-
-            <!-- ==========================
-                 ALERTES
-            =========================== -->
-
+            <!-- ALERTES -->
             <section class="admin-alerts">
-
                 <div class="admin-section-title">
-
                     <div>
-                        <h2>
-                            🚨 Alertes de sécurité
-                        </h2>
-
-                        <p>
-                            Les alertes sont des signaux à vérifier,
-                            pas des sanctions automatiques.
-                        </p>
+                        <h2>🚨 Alertes de sécurité</h2>
+                        <p>Les alertes sont des signaux à vérifier, pas des sanctions automatiques.</p>
                     </div>
-
-                    <button
-                        id="refreshAlerts"
-                        class="admin-small-button"
-                    >
-                        ↻ Actualiser
-                    </button>
-
+                    <div class="section-chip">SECURITY</div>
                 </div>
 
                 <div id="alertsList">
-
-                    <p>
-                        Chargement des alertes...
-                    </p>
-
+                    <div class="admin-empty">
+                        <div>⏳</div>
+                        <p>Chargement des alertes...</p>
+                    </div>
                 </div>
-
             </section>
 
+            <!-- RECHERCHE -->
+            <div class="admin-search">
+                <div class="search-icon">⌕</div>
+                <input id="userIdInput" placeholder="Rechercher un utilisateur avec son ID public...">
+                <button id="searchUser">Rechercher</button>
+            </div>
 
-            <!-- ==========================
-                 RECHERCHE
-            =========================== -->
-
-            <section class="admin-search">
-
-                <input
-                    id="userIdInput"
-                    placeholder="Pseudo ou ID utilisateur"
-                    autocomplete="off"
-                >
-
-                <button id="searchUser">
-                    🔍 Rechercher
-                </button>
-
-                <button
-                    id="clearSearch"
-                    class="admin-small-button"
-                >
-                    Effacer
-                </button>
-
-            </section>
-
-
-            <!-- ==========================
-                 COLONNES
-            =========================== -->
-
+            <!-- COLONNES -->
             <div class="admin-columns">
 
-
-                <!-- ======================
-                     UTILISATEURS
-                ======================= -->
-
-                <div>
-
+                <!-- UTILISATEURS -->
+                <section class="users-panel">
                     <div class="admin-section-title">
-
                         <div>
-                            <h2>
-                                👥 Utilisateurs
-                            </h2>
-
-                            <p id="usersCount">
-                                Chargement...
-                            </p>
+                            <h2>👥 Utilisateurs</h2>
+                            <p>Comptes enregistrés sur Xyro.AI</p>
                         </div>
-
+                        <div class="section-chip">ACCOUNTS</div>
                     </div>
 
                     <div id="usersList">
-                        <p>
-                            Chargement des utilisateurs...
-                        </p>
-                    </div>
-
-                </div>
-
-
-                <!-- ======================
-                     DONNÉES DU COMPTE
-                ======================= -->
-
-                <div>
-
-                    <div class="admin-section-title">
-
-                        <div>
-                            <h2>
-                                📊 Données du compte
-                            </h2>
-
-                            <p id="selectedUserLabel">
-                                Aucun utilisateur sélectionné.
-                            </p>
+                        <div class="admin-empty">
+                            <div>⏳</div>
+                            <p>Chargement des utilisateurs...</p>
                         </div>
+                    </div>
+                </section>
 
+                <!-- DETAILS -->
+                <section class="details-panel">
+                    <div class="admin-section-title">
+                        <div>
+                            <h2>📊 Données du compte</h2>
+                            <p>Consultation autorisée des données</p>
+                        </div>
+                        <div class="section-chip">DETAILS</div>
                     </div>
 
                     <div id="userDetails">
-
-                        <div class="admin-empty">
-
-                            <div>
-                                👤
-                            </div>
-
-                            <p>
-                                Sélectionne un utilisateur pour
-                                afficher ses données.
-                            </p>
-
+                        <div class="admin-empty details-empty">
+                            <div>👤</div>
+                            <p>Sélectionne un utilisateur pour afficher ses données.</p>
                         </div>
-
                     </div>
-
-                </div>
+                </section>
 
             </div>
 
         </section>
-
     </div>
-
 </div>
 
-
 <script src="admin.js"></script>
+
+<script>
+/* Statistiques visuelles sans modifier le fonctionnement existant. */
+const originalLoadUsers = window.loadUsers;
+const originalLoadAlerts = window.loadAlerts;
+
+function updateVisualStats() {
+    const users = document.querySelectorAll("#usersList .admin-user").length;
+    const alerts = document.querySelectorAll("#alertsList .admin-alert").length;
+
+    const usersStat = document.getElementById("statUsers");
+    const alertsStat = document.getElementById("statAlerts");
+
+    if (usersStat && users) usersStat.textContent = users;
+    if (alertsStat && alerts) alertsStat.textContent = alerts;
+}
+
+/* Mise à jour périodique légère de l'affichage. */
+setInterval(updateVisualStats, 1000);
+</script>
 
 </body>
 </html>
