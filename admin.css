@@ -721,3 +721,337 @@ button {
         font-size: 11px;
     }
 }
+
+
+/* =========================================================
+   MODERATION / BAN
+   ========================================================= */
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status, .live-badge, .section-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.status {
+    color: #8490aa;
+    font-size: 11px;
+}
+
+.status span, .live-badge span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #50dc9a;
+    box-shadow: 0 0 12px rgba(80, 220, 154, .8);
+}
+
+.live-badge {
+    padding: 7px 10px;
+    border: 1px solid rgba(80, 220, 154, .18);
+    border-radius: 999px;
+    color: #75e8ad;
+    background: rgba(80, 220, 154, .06);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+.dashboard-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+    margin: 25px 0 18px;
+}
+
+.dashboard-title h2 {
+    margin: 3px 0 4px;
+    font-size: 25px;
+}
+
+.dashboard-title p {
+    margin: 0;
+    color: #6e7a95;
+    font-size: 12px;
+}
+
+.eyebrow {
+    color: #6f83ff;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 2.5px;
+}
+
+.section-chip {
+    padding: 5px 8px;
+    border: 1px solid rgba(100, 120, 255, .15);
+    border-radius: 999px;
+    color: #7586e7;
+    background: rgba(70, 90, 255, .06);
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+.login-panel label {
+    display: block;
+    margin: 15px 0 6px;
+    color: #7d89a3;
+    font-size: 11px;
+}
+
+.primary-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-search {
+    align-items: center;
+}
+
+.search-icon {
+    color: #6175ff;
+    font-size: 23px;
+}
+
+.admin-search .admin-small-button {
+    min-height: 42px;
+}
+
+.user-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.admin-user .user-status {
+    justify-self: end;
+    align-self: center;
+    padding: 5px 7px;
+    border-radius: 999px;
+    font-size: 8px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.user-status.active {
+    color: #70dfa8;
+    background: rgba(70, 220, 150, .07);
+}
+
+.user-status.banned {
+    color: #ff9292;
+    background: rgba(255, 90, 90, .08);
+}
+
+.admin-user.user-banned {
+    border-color: rgba(255, 100, 100, .14);
+}
+
+.user-arrow {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: center;
+    color: #596bff;
+    font-size: 22px;
+}
+
+.admin-profile.profile-banned {
+    border-color: rgba(255, 100, 100, .18);
+}
+
+.profile-main {
+    min-width: 0;
+}
+
+.account-status {
+    display: inline-block;
+    margin-top: 7px;
+    padding: 5px 8px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.account-status.is-active {
+    color: #6fe0a6;
+    background: rgba(65, 210, 140, .07);
+}
+
+.account-status.is-banned {
+    color: #ff9696;
+    background: rgba(255, 80, 80, .08);
+}
+
+.moderation-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin: 12px 0 16px;
+    padding: 14px;
+    border: 1px solid rgba(130, 150, 255, .10);
+    border-radius: 14px;
+    background: rgba(5, 9, 18, .55);
+}
+
+.moderation-card > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.moderation-card strong {
+    font-size: 12px;
+}
+
+.moderation-card small {
+    color: #697690;
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+.ban-btn, .unban-btn, .danger-btn {
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 13px;
+    color: white;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.ban-btn, .danger-btn {
+    background: linear-gradient(135deg, #d94b5b, #a82d52);
+}
+
+.unban-btn {
+    background: linear-gradient(135deg, #287f68, #25a77c);
+}
+
+.ban-btn:hover, .danger-btn:hover, .unban-btn:hover {
+    filter: brightness(1.12);
+}
+
+.ban-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(2, 4, 10, .72);
+    backdrop-filter: blur(12px);
+}
+
+.ban-box {
+    position: relative;
+    width: min(440px, 100%);
+    padding: 28px;
+    border: 1px solid rgba(255, 100, 120, .16);
+    border-radius: 23px;
+    background: linear-gradient(145deg, rgba(22, 19, 32, .97), rgba(10, 13, 24, .98));
+    box-shadow: 0 35px 100px rgba(0, 0, 0, .55);
+}
+
+.ban-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    border: 0;
+    color: #7f8aa3;
+    background: transparent;
+    font-size: 25px;
+}
+
+.ban-icon {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 13px;
+    border-radius: 14px;
+    background: rgba(255, 70, 90, .10);
+    font-size: 23px;
+}
+
+.ban-box h2 {
+    margin: 5px 0;
+    font-size: 22px;
+}
+
+.ban-target {
+    margin: 0 0 20px;
+    color: #68758f;
+    font-size: 11px;
+}
+
+.ban-box label {
+    display: block;
+    margin: 14px 0 6px;
+    color: #818da7;
+    font-size: 11px;
+}
+
+.ban-box select, .ban-box textarea {
+    width: 100%;
+    border: 1px solid rgba(130, 150, 255, .14);
+    border-radius: 11px;
+    outline: none;
+    color: #edf2ff;
+    background: #0b0f1b;
+}
+
+.ban-box select {
+    padding: 12px;
+}
+
+.ban-box textarea {
+    min-height: 105px;
+    resize: vertical;
+    padding: 12px;
+}
+
+.ban-box select:focus, .ban-box textarea:focus {
+    border-color: rgba(83, 111, 255, .65);
+}
+
+.ban-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+@media (max-width: 700px) {
+    .status {
+        display: none;
+    }
+
+    .dashboard-title {
+        align-items: flex-start;
+    }
+
+    .moderation-card {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .ban-actions {
+        flex-direction: column-reverse;
+    }
+
+    .ban-actions button {
+        width: 100%;
+    }
+}
