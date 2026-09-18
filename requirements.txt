@@ -1,5 +1,5 @@
-flask
-openai
+Flask
 gunicorn
-werkzeug
-discord.py
+openai
+Werkzeug
+psycopg[binary]
