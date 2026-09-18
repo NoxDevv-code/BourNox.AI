@@ -21,6 +21,10 @@ const PROJECT_KEY = "xyro_project";
 // ======================================================
 
 const input = document.getElementById("msg");
+const mediaInput = document.getElementById("media-input");
+const attachMedia = document.getElementById("attach-media");
+const mediaPreview = document.getElementById("media-preview");
+let pendingMedia = null;
 const send = document.getElementById("send");
 const chatArea = document.getElementById("chat-area");
 
@@ -414,31 +418,40 @@ function nouvelleDiscussion() {
 // MESSAGE UTILISATEUR
 // ======================================================
 
-function ajouterMessageUser(message) {
+function ajouterMessageUser(message, attachment = null) {
     if (!chatArea) return;
 
-    const welcome =
-        chatArea.querySelector(
-            ".welcome-chat"
-        );
+    const welcome = chatArea.querySelector(".welcome-chat");
+    if (welcome) welcome.remove();
 
-    if (welcome) {
-        welcome.remove();
+    const element = document.createElement("div");
+    element.className = "message user";
+
+    if (message) {
+        const text = document.createElement("div");
+        text.textContent = message;
+        element.appendChild(text);
     }
 
-    const element =
-        document.createElement("div");
+    if (attachment?.url) {
+        if (attachment.kind === "image") {
+            const img = document.createElement("img");
+            img.className = "message-media image";
+            img.src = attachment.url;
+            img.alt = attachment.name || "Image jointe";
+            img.loading = "lazy";
+            element.appendChild(img);
+        } else if (attachment.kind === "video") {
+            const video = document.createElement("video");
+            video.className = "message-media video";
+            video.src = attachment.url;
+            video.controls = true;
+            video.preload = "metadata";
+            element.appendChild(video);
+        }
+    }
 
-    element.className =
-        "message user";
-
-    element.textContent =
-        message;
-
-    chatArea.appendChild(
-        element
-    );
-
+    chatArea.appendChild(element);
     scrollChat();
 }
 
@@ -578,6 +591,108 @@ function ajouterChargement() {
 }
 
 // ======================================================
+// PHOTOS / VIDÉOS
+// ======================================================
+
+function clearMediaSelection() {
+    pendingMedia = null;
+    if (mediaInput) mediaInput.value = "";
+    if (mediaPreview) {
+        mediaPreview.innerHTML = "";
+        mediaPreview.classList.add("hidden");
+    }
+}
+
+function renderMediaPreview(attachment) {
+    if (!mediaPreview) return;
+    mediaPreview.classList.remove("hidden");
+    mediaPreview.innerHTML = "";
+
+    const wrap = document.createElement("div");
+    wrap.className = "media-preview-card";
+
+    if (attachment.kind === "image") {
+        const img = document.createElement("img");
+        img.src = attachment.localUrl;
+        img.alt = attachment.name;
+        wrap.appendChild(img);
+    } else {
+        const video = document.createElement("video");
+        video.src = attachment.localUrl;
+        video.muted = true;
+        video.playsInline = true;
+        wrap.appendChild(video);
+    }
+
+    const info = document.createElement("span");
+    info.textContent = attachment.name;
+    wrap.appendChild(info);
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "media-remove";
+    remove.textContent = "×";
+    remove.title = "Retirer";
+    remove.onclick = clearMediaSelection;
+    wrap.appendChild(remove);
+
+    mediaPreview.appendChild(wrap);
+}
+
+async function choisirMedia(file) {
+    if (!file) return;
+    if (file.size > 25 * 1024 * 1024) {
+        afficherNotification("Fichier trop volumineux : 25 Mo maximum.");
+        clearMediaSelection();
+        return;
+    }
+
+    const kind = file.type.startsWith("image/") ? "image" :
+        file.type.startsWith("video/") ? "video" : null;
+    if (!kind) {
+        afficherNotification("Choisis une photo ou une vidéo.");
+        return;
+    }
+
+    const localUrl = URL.createObjectURL(file);
+    pendingMedia = {
+        kind,
+        name: file.name,
+        localUrl,
+        file
+    };
+    renderMediaPreview(pendingMedia);
+
+    try {
+        const form = new FormData();
+        form.append("file", file);
+        const response = await fetch("/api/upload-media", {
+            method: "POST",
+            body: form
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Upload impossible.");
+
+        pendingMedia = {
+            ...pendingMedia,
+            url: data.url,
+            data_url: data.data_url || null
+        };
+        renderMediaPreview(pendingMedia);
+        afficherNotification(kind === "image" ? "Photo ajoutée 📷" : "Vidéo ajoutée 🎥");
+    } catch (error) {
+        console.error("Upload média :", error);
+        clearMediaSelection();
+        afficherNotification("Impossible d'envoyer ce fichier.");
+    }
+}
+
+if (attachMedia && mediaInput) {
+    attachMedia.addEventListener("click", () => mediaInput.click());
+    mediaInput.addEventListener("change", () => choisirMedia(mediaInput.files?.[0]));
+}
+
+// ======================================================
 // ENVOYER UN MESSAGE
 // ======================================================
 
@@ -588,28 +703,19 @@ async function envoyer(
         return;
     }
 
-    const message =
-        messageForce ??
-        input.value.trim();
+    const message = messageForce ?? input.value.trim();
 
-    if (
-        !message ||
-        send.disabled
-    ) {
+    if ((!message && !pendingMedia) || send.disabled) {
         return;
     }
 
+    const attachment = pendingMedia;
     input.value = "";
-
     ajusterHauteurInput();
-
     send.disabled = true;
-
     ouvrirVue("chat");
-
-    ajouterMessageUser(
-        message
-    );
+    ajouterMessageUser(message, attachment);
+    clearMediaSelection();
 
     const loading =
         ajouterChargement();
@@ -628,6 +734,11 @@ async function envoyer(
 
                     body: JSON.stringify({
                         message,
+                        attachment: attachment ? {
+                            kind: attachment.kind,
+                            url: attachment.url,
+                            data_url: attachment.data_url || null
+                        } : null,
 
                         session_id:
                             sessionId,

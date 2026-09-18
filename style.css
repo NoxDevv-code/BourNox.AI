@@ -3526,3 +3526,76 @@ body.light ::-webkit-scrollbar-thumb:hover {
     }
 
 }
+
+
+/* =========================================================
+   MÉDIAS DU CHAT
+========================================================= */
+.media-preview {
+    margin: 0 12px 8px;
+}
+
+.media-preview.hidden {
+    display: none;
+}
+
+.media-preview-card {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    max-width: min(360px, 100%);
+    padding: 7px 34px 7px 7px;
+    border: 1px solid var(--line-bright);
+    border-radius: 12px;
+    background: var(--panel-2);
+    overflow: hidden;
+}
+
+.media-preview-card img,
+.media-preview-card video {
+    width: 58px;
+    height: 58px;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+}
+
+.media-preview-card span {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.media-remove {
+    position: absolute;
+    right: 7px;
+    top: 7px;
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.08);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.message-media {
+    display: block;
+    max-width: min(420px, 100%);
+    margin-top: 9px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.08);
+}
+
+.message-media.image {
+    max-height: 420px;
+    object-fit: contain;
+}
+
+.message-media.video {
+    width: min(420px, 100%);
+    max-height: 420px;
+}

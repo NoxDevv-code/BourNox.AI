@@ -470,6 +470,21 @@
                     <div class="composer">
 
                         <button
+                            id="attach-media"
+                            class="composer-tool"
+                            type="button"
+                            title="Ajouter une photo ou une vidéo">
+                            📎
+                        </button>
+
+                        <input
+                            id="media-input"
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime,video/x-m4v"
+                            hidden
+                        >
+
+                        <button
                             class="composer-tool"
                             onclick="ouvrirCreateurImage()"
                             title="Créer une image">
@@ -498,6 +513,8 @@
                         </button>
 
                     </div>
+
+                    <div id="media-preview" class="media-preview hidden"></div>
 
                     <div class="composer-footer">
 

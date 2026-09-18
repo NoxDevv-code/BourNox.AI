@@ -2,9 +2,11 @@ import os
 import re
 import sqlite3
 import uuid
+from pathlib import Path
 from datetime import datetime, timedelta
 
 from flask import Flask, request, jsonify, send_from_directory, session, redirect
+from werkzeug.utils import secure_filename
 from openai import OpenAI
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -36,6 +38,35 @@ MODEL = os.getenv(
 )
 
 DB_FILE = "bournox.db"
+
+# =========================================================
+# FICHIERS JOINTS
+# =========================================================
+
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
+ALLOWED_VIDEO_EXTENSIONS = {"mp4", "webm", "mov", "m4v"}
+ALLOWED_MEDIA_EXTENSIONS = (
+    ALLOWED_IMAGE_EXTENSIONS
+    | ALLOWED_VIDEO_EXTENSIONS
+)
+MAX_MEDIA_SIZE = 25 * 1024 * 1024
+
+
+def media_kind(mimetype, filename):
+    if mimetype.startswith("image/"):
+        return "image"
+    if mimetype.startswith("video/"):
+        return "video"
+    suffix = Path(filename).suffix.lower().lstrip(".")
+    if suffix in ALLOWED_IMAGE_EXTENSIONS:
+        return "image"
+    if suffix in ALLOWED_VIDEO_EXTENSIONS:
+        return "video"
+    return None
+
 
 
 # =========================================================
@@ -864,7 +895,8 @@ def ask_ai(
     mode="normal",
     response_style="detaille",
     personality="cool",
-    project_name=None
+    project_name=None,
+    attachment=None
 ):
     # -----------------------------------------------------
     # Historique
@@ -969,13 +1001,32 @@ def ask_ai(
     # On ne le rajoute donc PAS une deuxième fois.
     # -----------------------------------------------------
 
-    input_text = [
-        {
+    input_text = []
+    for item in recent:
+        input_text.append({
             "role": item["role"],
             "content": item["content"]
-        }
-        for item in recent
-    ]
+        })
+
+    # Une image jointe est envoyée à l'IA avec le dernier message utilisateur.
+    if attachment and attachment.get("kind") == "image":
+        image_url = attachment.get("data_url")
+        if image_url and input_text:
+            last = input_text[-1]
+            if last.get("role") == "user":
+                input_text[-1] = {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": last["content"] or "Analyse cette image."
+                        },
+                        {
+                            "type": "input_image",
+                            "image_url": image_url
+                        }
+                    ]
+                }
 
     # -----------------------------------------------------
     # PARAMÈTRES OPENAI
@@ -1311,6 +1362,60 @@ def me():
 
 
 # =========================================================
+# UPLOADS PHOTO / VIDÉO
+# =========================================================
+
+@app.route("/api/upload-media", methods=["POST"])
+def upload_media():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Non connecté."}), 401
+
+    file = request.files.get("file")
+    if not file or not file.filename:
+        return jsonify({"error": "Aucun fichier reçu."}), 400
+
+    original_name = secure_filename(file.filename)
+    extension = Path(original_name).suffix.lower().lstrip(".")
+    if extension not in ALLOWED_MEDIA_EXTENSIONS:
+        return jsonify({"error": "Format non pris en charge."}), 400
+
+    kind = media_kind(file.mimetype or "", original_name)
+    if not kind:
+        return jsonify({"error": "Seules les photos et vidéos sont autorisées."}), 400
+
+    # Limite de taille sans charger le fichier entier en mémoire.
+    file.stream.seek(0, 2)
+    size = file.stream.tell()
+    file.stream.seek(0)
+    if size > MAX_MEDIA_SIZE:
+        return jsonify({"error": "Fichier trop volumineux (25 Mo maximum)."}), 413
+
+    user_dir = UPLOAD_DIR / secure_filename(user["public_id"])
+    user_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}.{extension}"
+    destination = user_dir / filename
+    file.save(destination)
+
+    # Les images peuvent être transmises à l'IA sous forme de data URL.
+    data_url = None
+    if kind == "image":
+        import base64
+        raw = destination.read_bytes()
+        mime = file.mimetype or "image/" + extension
+        data_url = f"data:{mime};base64,{base64.b64encode(raw).decode('ascii')}"
+
+    return jsonify({
+        "ok": True,
+        "kind": kind,
+        "name": original_name,
+        "url": f"/uploads/{secure_filename(user['public_id'])}/{filename}",
+        "data_url": data_url
+    })
+
+
+# =========================================================
 # CHAT
 # =========================================================
 
@@ -1325,7 +1430,7 @@ def chat():
         }), 401
 
     try:
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
 
         message = data.get(
             "message",
@@ -1360,7 +1465,22 @@ def chat():
             "project"
         )
 
-        if not message:
+        attachment = data.get("attachment")
+        if attachment and not isinstance(attachment, dict):
+            attachment = None
+
+        if attachment:
+            attachment = {
+                "kind": attachment.get("kind"),
+                "url": attachment.get("url"),
+                "data_url": attachment.get("data_url")
+            }
+            if attachment.get("data_url") and len(attachment["data_url"]) > 12 * 1024 * 1024:
+                attachment["data_url"] = None
+            if attachment["kind"] not in {"image", "video"}:
+                attachment = None
+
+        if not message and not attachment:
             return jsonify({
                 "response":
                 "Écris-moi quelque chose 😎"
@@ -1370,11 +1490,16 @@ def chat():
         # Sauvegarde du message
         # -------------------------------------------------
 
+        stored_message = message
+        if attachment:
+            label = "📷 Image jointe" if attachment["kind"] == "image" else "🎥 Vidéo jointe"
+            stored_message = (message + "\n" if message else "") + label
+
         save_message(
             user["public_id"],
             session_id,
             "user",
-            message
+            stored_message
         )
 
         # -------------------------------------------------
@@ -1421,7 +1546,8 @@ def chat():
             mode=mode,
             response_style=response_style,
             personality=personality,
-            project_name=project_name
+            project_name=project_name,
+            attachment=attachment
         )
 
         # -------------------------------------------------
