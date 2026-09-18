@@ -1759,11 +1759,38 @@ def generate_image_route():
 # =========================================================
 
 def admin_authenticated():
-    return bool(
-        session.get(
-            "admin_authenticated"
-        )
-    )
+    # Accepte la session admin dédiée.
+    if session.get("admin_authenticated"):
+        return True
+
+    # Si Nox est déjà connecté sur le site avec son compte admin,
+    # on peut aussi utiliser cette session pour ouvrir la console admin.
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return False
+
+    conn = get_db()
+
+    user = conn.execute(
+        """
+        SELECT public_id, is_admin
+        FROM users
+        WHERE public_id = ?
+        """,
+        (user_id,)
+    ).fetchone()
+
+    conn.close()
+
+    if not user or not user["is_admin"]:
+        return False
+
+    session["admin_authenticated"] = True
+    session["admin_user_id"] = user["public_id"]
+    session.permanent = True
+
+    return True
 
 
 @app.route("/api/admin/me")
