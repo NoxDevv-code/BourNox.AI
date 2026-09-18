@@ -1766,6 +1766,36 @@ def admin_authenticated():
     )
 
 
+@app.route("/api/admin/me")
+def admin_me():
+    if not admin_authenticated():
+        return jsonify({"authenticated": False}), 401
+
+    conn = get_db()
+
+    user = conn.execute(
+        """
+        SELECT public_id, username, is_admin
+        FROM users
+        WHERE public_id = ?
+          AND is_admin = 1
+        """,
+        (session.get("admin_user_id"),)
+    ).fetchone()
+
+    conn.close()
+
+    if not user:
+        session.pop("admin_authenticated", None)
+        session.pop("admin_user_id", None)
+        return jsonify({"authenticated": False}), 401
+
+    return jsonify({
+        "authenticated": True,
+        "user": dict(user)
+    })
+
+
 @app.route(
     "/api/admin/login",
     methods=["POST"]
@@ -1813,6 +1843,7 @@ def admin_login():
 
     session["admin_authenticated"] = True
     session["admin_user_id"] = user["public_id"]
+    session.permanent = True
 
     return jsonify({
         "success": True,

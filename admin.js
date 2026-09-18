@@ -582,7 +582,7 @@ window.reviewAlert =
   try {
 
     const me =
-      await api("/api/me");
+      await api("/api/admin/me");
 
     if (
       me &&
