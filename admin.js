@@ -1,225 +1,32 @@
 const $ = id => document.getElementById(id);
-let selectedPublicId = null;
+const esc = v => String(v ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));
+const fmt = v => Number(v||0).toLocaleString("fr-FR");
 
-async function api(url, options = {}) {
-  const response = await fetch(url, {
-    credentials: "same-origin",
-    ...options,
-    headers: {
-      ...(options.headers || {})
-    }
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || "Erreur serveur.");
-  return data;
+async function api(url, options={}) {
+  const r = await fetch(url, {credentials:"same-origin", ...options});
+  const d = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(d.error || `Erreur serveur (${r.status})`);
+  return d;
 }
+function online(v){ $("status").className=`status ${v?"online":"offline"}`; $("status").textContent=v?"● Xyro en ligne":"● Hors ligne"; }
 
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-  }[c]));
-}
-function formatNumber(v){return Number(v||0).toLocaleString("fr-FR")}
-function toast(message){
-  const t=$("toast"); if(!t)return;
-  t.textContent=message;t.classList.add("show");
-  clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove("show"),2600);
-}
-function setOnline(online){
-  const s=$("adminStatus");if(!s)return;
-  s.className="status "+(online?"online":"offline");
-  s.textContent=online?"● Xyro en ligne":"● Hors ligne";
-}
-function showDashboard(identity=""){
-  $("adminLogin")?.classList.add("hidden");
-  $("dashboard")?.classList.remove("hidden");
-  if($("adminIdentity")) $("adminIdentity").textContent=identity?`Connecté : ${identity}`:"";
-}
+async function stats(){ const d=await api('/api/admin/stats'); $("sUsers").textContent=fmt(d.users);$("sMessages").textContent=fmt(d.messages);$("sMemories").textContent=fmt(d.memories);$("sProjects").textContent=fmt(d.projects);$("sAlerts").textContent=fmt(d.open_alerts);online(d.status==='online'); }
 
-async function loadStats(){
-  const d=await api("/api/admin/stats");
-  ["Users","Messages","Memories","Projects"].forEach((name,i)=>{
-    const ids=["statUsers","statMessages","statMemories","statProjects"];
-    if($(ids[i])) $(ids[i]).textContent=formatNumber(d[name.toLowerCase()]);
-  });
-  if($("statAlerts")) $("statAlerts").textContent=formatNumber(d.open_alerts);
-  setOnline(d.status==="online");
-}
+function renderUsers(list){ const box=$("users"); if(!list?.length){box.innerHTML='<div class="empty">🔎<br>Aucun autre compte trouvé.</div>';return;} box.innerHTML=list.map(u=>`<button class="user" onclick="loadUser('${encodeURIComponent(u.public_id)}')"><div class="avatar">${esc((u.username||'?')[0].toUpperCase())}</div><div class="usertext"><b>${esc(u.username)}</b><span>${esc(u.public_id)}</span><small>Créé le ${esc(u.created_at||'inconnu')}</small>${u.banned?'<em>🔨 Banni</em>':''}</div><strong>›</strong></button>`).join(''); }
+async function users(q=''){ try{const d=await api(q?'/api/admin/search-users?q='+encodeURIComponent(q):'/api/admin/users');renderUsers(d.users||[]);}catch(e){$("users").innerHTML=`<div class="error">⚠️ ${esc(e.message)}</div>`;} }
 
-function renderUsers(users){
-  const box=$("usersList");if(!box)return;
-  if(!users.length){box.innerHTML='<div class="empty-state"><div>👥</div><p>Aucun compte enregistré.</p></div>';return;}
-  box.innerHTML=users.map(u=>{
-    const banned=Number(u.banned)===1;
-    return `<button class="user-card ${selectedPublicId===u.public_id?"selected":""}" data-id="${escapeHtml(u.public_id)}">
-      <div class="avatar">${escapeHtml((u.username||"?").charAt(0).toUpperCase())}</div>
-      <div class="user-main">
-        <strong>${escapeHtml(u.username)}</strong>
-        <span>${escapeHtml(u.public_id)}</span>
-        <small>${escapeHtml(u.created_at||"Date inconnue")}</small>
-      </div>
-      <span class="badge ${banned?"banned":"ok"}">${banned?"BANNI":"ACTIF"}</span>
-    </button>`;
-  }).join("");
-  box.querySelectorAll(".user-card").forEach(b=>b.addEventListener("click",()=>loadUser(b.dataset.id)));
-}
+async function alerts(){try{const d=await api('/api/admin/alerts');const b=$("alerts");if(!d.alerts?.length){b.innerHTML='<div class="empty">✅<br>Aucune alerte.</div>';return;}b.innerHTML=d.alerts.map(a=>`<article class="alert ${a.reviewed?'reviewed':''}"><div><b>${esc(a.category)}</b><span>${esc(a.severity)}</span></div><p>${esc(a.message_excerpt)}</p><small>${esc(a.created_at)} · ${esc(a.user_id)}</small>${a.reviewed?'':'<button onclick="reviewAlert('+Number(a.id)+')">Marquer comme vue</button>'}</article>`).join('');}catch(e){$("alerts").innerHTML=`<div class="error">⚠️ ${esc(e.message)}</div>`;}}
+async function reviewAlert(id){await api(`/api/admin/alerts/${id}/review`,{method:'POST'});await Promise.all([alerts(),stats()]);}
 
-async function loadUsers(query=""){
-  try{
-    const endpoint=query?"/api/admin/search-users?q="+encodeURIComponent(query):"/api/admin/users";
-    const d=await api(endpoint);
-    renderUsers(Array.isArray(d.users)?d.users:[]);
-  }catch(e){$("usersList").innerHTML=`<p class="error">⚠️ ${escapeHtml(e.message)}</p>`}
-}
+function banControls(u){ if(u.is_admin) return '<div class="admin-note">🛡️ Compte administrateur protégé.</div>'; if(u.banned) return `<div class="ban-box danger"><b>🔨 Compte actuellement banni</b><p>${esc(u.ban_reason||'Aucune raison')}</p><small>Expire : ${u.ban_expires_at?esc(u.ban_expires_at):'Jamais'}</small><button class="danger-btn" onclick="unbanUser('${encodeURIComponent(u.public_id)}')">Débannir</button></div>`; return `<div class="ban-box"><b>🔨 Bannir cet utilisateur</b><div class="ban-row"><select id="banDuration"><option value="10m">10 minutes</option><option value="1h">1 heure</option><option value="6h">6 heures</option><option value="1d">24 heures</option><option value="7d">7 jours</option><option value="30d">30 jours</option><option value="permanent">Permanent</option></select><input id="banReason" maxlength="500" placeholder="Raison du ban"><button class="danger-btn" onclick="banUser('${encodeURIComponent(u.public_id)}')">Bannir</button></div></div>`;}
 
-async function loadAlerts(){
-  const box=$("alertsList");if(!box)return;
-  try{
-    const d=await api("/api/admin/alerts"), alerts=Array.isArray(d.alerts)?d.alerts:[];
-    if(!alerts.length){box.innerHTML='<div class="empty-state"><div>✅</div><p>Aucune alerte.</p></div>';return;}
-    box.innerHTML=alerts.map(a=>`<div class="alert-card ${a.reviewed?"reviewed":""}">
-      <div class="alert-head"><strong>${escapeHtml(a.category)}</strong><span class="badge ${a.reviewed?"ok":"banned"}">${escapeHtml(a.severity)}</span></div>
-      <p>${escapeHtml(a.message_excerpt)}</p>
-      <small>${escapeHtml(a.created_at)} • ID ${escapeHtml(a.user_id||"")}</small>
-      ${a.reviewed?"":`<div class="ban-actions"><button class="small-btn" onclick="reviewAlert(${Number(a.id)})">✓ Marquer comme vue</button></div>`}
-    </div>`).join("");
-  }catch(e){box.innerHTML=`<p class="error">⚠️ ${escapeHtml(e.message)}</p>`}
-}
-async function reviewAlert(id){
-  try{await api(`/api/admin/alerts/${encodeURIComponent(id)}/review`,{method:"POST"});await loadAlerts();await loadStats();toast("Alerte marquée comme vue.");}
-  catch(e){toast(e.message)}
-}
+async function loadUser(id){id=decodeURIComponent(id);try{const d=await api('/api/admin/user/'+encodeURIComponent(id));const u=d.user;$("selected").textContent=`${u.username} · ${u.public_id}`;let sessions={};(d.messages||[]).forEach(m=>(sessions[m.session_id||'Sans session']??=[]).push(m));$("details").innerHTML=`<div class="profile"><div class="big-avatar">${esc((u.username||'?')[0].toUpperCase())}</div><div><h3>${esc(u.username)}</h3><p>${esc(u.public_id)}</p><small>Créé le ${esc(u.created_at)}</small></div></div>${banControls(u)}<h3 class="sub">💬 Conversations (${fmt(u.message_count)})</h3><div class="convos">${Object.entries(sessions).map(([sid,msgs])=>`<div class="conversation"><b>Session ${esc(sid)}</b>${msgs.map(m=>`<div class="msg ${m.role==='user'?'from-user':'from-ai'}"><strong>${m.role==='user'?'Utilisateur':'Xyro.AI'}</strong><p>${esc(m.content)}</p><small>${esc(m.created_at)}</small></div>`).join('')}</div>`).join('')||'<div class="empty">Aucun message.</div>'}</div><h3 class="sub">🧠 Mémoire (${fmt(u.memory_count)})</h3><div class="list">${(d.memories||[]).map(m=>`<div><p>${esc(m.content)}</p><small>${esc(m.created_at)}</small></div>`).join('')||'<div class="empty">Aucune mémoire.</div>'}</div><h3 class="sub">📁 Projets (${fmt(u.project_count)})</h3><div class="list">${(d.projects||[]).map(p=>`<div><b>${esc(p.name)}</b><p>${esc(p.context||'')}</p><small>${esc(p.updated_at)}</small></div>`).join('')||'<div class="empty">Aucun projet.</div>'}</div>`;}catch(e){$("details").innerHTML=`<div class="error">⚠️ ${esc(e.message)}</div>`;}}
 
-function banPanel(user){
-  const banned=Number(user.banned)===1;
-  const expires=user.ban_expires_at?escapeHtml(user.ban_expires_at):"Définitif";
-  return `<div class="ban-box">
-    <h4>${banned?"🔴 Compte actuellement banni":"🛡️ Gestion du bannissement"}</h4>
-    ${banned?`<p class="muted">Expiration : <strong>${expires}</strong></p><p class="muted">Raison : ${escapeHtml(user.ban_reason||"Aucune")}</p>
-      <div class="ban-actions"><button class="success-btn" onclick="unbanUser('${escapeHtml(user.public_id)}')">Débannir</button></div>`
-    :`<div class="ban-row">
-        <select id="banDuration">
-          <option value="10m">10 minutes</option><option value="1h">1 heure</option>
-          <option value="6h">6 heures</option><option value="24h">24 heures</option>
-          <option value="7d">7 jours</option><option value="30d">30 jours</option>
-          <option value="permanent">Définitif</option>
-        </select>
-        <input id="banReason" maxlength="500" placeholder="Raison du bannissement">
-      </div>
-      <div class="ban-actions"><button class="danger-btn" onclick="banUser('${escapeHtml(user.public_id)}')">🚫 Bannir le compte</button></div>`}
-  </div>`;
-}
+async function banUser(id){const duration=$("banDuration")?.value;const reason=$("banReason")?.value||'';try{await api('/api/admin/user/'+id+'/ban',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({duration,reason})});await loadUser(id);await Promise.all([users($("search").value.trim()),stats()]);}catch(e){alert(e.message);}}
+async function unbanUser(id){try{await api('/api/admin/user/'+id+'/unban',{method:'POST'});await loadUser(id);await Promise.all([users($("search").value.trim()),stats()]);}catch(e){alert(e.message);}}
 
-async function loadUser(publicId){
-  selectedPublicId=publicId;
-  try{
-    const d=await api("/api/admin/user/"+encodeURIComponent(publicId));
-    const u=d.user||{};
-    const messages=Array.isArray(d.messages)?d.messages:[];
-    const memories=Array.isArray(d.memories)?d.memories:[];
-    const projects=Array.isArray(d.projects)?d.projects:[];
-    $("selectedUserLabel").textContent=`${u.username} • ${u.public_id}`;
-
-    $("userDetails").innerHTML=`
-      <div class="profile-card">
-        <h3>👤 ${escapeHtml(u.username)}</h3>
-        <p><strong>ID Xyro :</strong> ${escapeHtml(u.public_id)}</p>
-        <p><strong>Créé le :</strong> ${escapeHtml(u.created_at)}</p>
-        <p><strong>Statut :</strong> <span class="badge ${Number(u.banned)===1?"banned":"ok"}">${Number(u.banned)===1?"BANNI":"ACTIF"}</span></p>
-        <div class="admin-user-stats">
-          <div><strong>${formatNumber(u.message_count)}</strong><small>Messages</small></div>
-          <div><strong>${formatNumber(u.memory_count)}</strong><small>Mémoires</small></div>
-          <div><strong>${formatNumber(u.project_count)}</strong><small>Projets</small></div>
-        </div>
-        ${Number(u.is_admin)===1?'<p class="muted">👑 Compte administrateur. Les actions de bannissement sont bloquées.</p>':banPanel(u)}
-      </div>
-
-      <h3>💬 Conversations</h3>
-      ${messages.length?messages.map(m=>`<div class="admin-message ${m.role==="user"?"from-user":"from-bot"}">
-        <strong>${m.role==="user"?"Utilisateur":"Xyro.AI"}</strong>
-        <div>${escapeHtml(m.content)}</div><small>${escapeHtml(m.created_at)}</small>
-      </div>`).join(""):'<p class="muted">Aucun message.</p>'}
-
-      <h3>🧠 Mémoires</h3>
-      ${memories.length?memories.map(m=>`<div class="admin-memory"><p>${escapeHtml(m.content)}</p><small>${escapeHtml(m.created_at)}</small></div>`).join(""):'<p class="muted">Aucune mémoire.</p>'}
-
-      <h3>📁 Projets</h3>
-      ${projects.length?projects.map(p=>`<div class="admin-project"><strong>${escapeHtml(p.name)}</strong><p>${escapeHtml(p.context)}</p><small>Mis à jour : ${escapeHtml(p.updated_at)}</small></div>`).join(""):'<p class="muted">Aucun projet.</p>'}
-    `;
-    await loadUsers($("userSearchInput")?.value.trim()||"");
-  }catch(e){
-    $("userDetails").innerHTML=`<p class="error">⚠️ ${escapeHtml(e.message)}</p>`;
-  }
-}
-
-async function banUser(publicId){
-  const duration=$("banDuration")?.value||"1h";
-  const reason=$("banReason")?.value.trim()||"Aucune raison indiquée.";
-  if(!confirm(`Bannir ce compte pour ${duration==="permanent"?"toujours":duration} ?`))return;
-  try{
-    await api("/api/admin/user/"+encodeURIComponent(publicId)+"/ban",{
-      method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({duration,reason})
-    });
-    toast("Compte banni.");
-    await loadUser(publicId);await loadStats();
-  }catch(e){toast(e.message)}
-}
-async function unbanUser(publicId){
-  if(!confirm("Retirer le bannissement de ce compte ?"))return;
-  try{
-    await api("/api/admin/user/"+encodeURIComponent(publicId)+"/unban",{method:"POST"});
-    toast("Compte débanni.");
-    await loadUser(publicId);await loadStats();
-  }catch(e){toast(e.message)}
-}
-window.reviewAlert=reviewAlert;window.banUser=banUser;window.unbanUser=unbanUser;
-
-async function refreshAll(){
-  try{await Promise.all([loadStats(),loadUsers(""),loadAlerts()]);}
-  catch(e){$("adminError").textContent=e.message}
-}
-
-async function restoreSession(){
-  try{
-    const me=await api("/api/me");
-    if(me?.user?.is_admin){
-      showDashboard(me.user.username||"Admin");
-      await refreshAll();
-      return true;
-    }
-  }catch(_){}
-  try{
-    const me=await api("/api/admin/me");
-    if(me?.authenticated){
-      showDashboard(me.user?.username||"Admin");
-      await refreshAll();
-      return true;
-    }
-  }catch(_){}
-  return false;
-}
-
-$("adminLoginBtn")?.addEventListener("click",async()=>{
-  const error=$("adminError");error.textContent="";
-  try{
-    const username=$("adminUsername").value.trim();
-    const password=$("adminPassword").value;
-    if(!username||!password)throw new Error("Entre ton identifiant et ton mot de passe.");
-    const d=await api("/api/admin/login",{
-      method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({username,password})
-    });
-    showDashboard(d.user?.username||username);
-    await refreshAll();
-  }catch(e){error.textContent=e.message}
-});
-$("adminPassword")?.addEventListener("keydown",e=>{if(e.key==="Enter")$("adminLoginBtn")?.click()});
-$("searchUser")?.addEventListener("click",()=>loadUsers($("userSearchInput").value.trim()));
-$("userSearchInput")?.addEventListener("keydown",e=>{if(e.key==="Enter")loadUsers(e.target.value.trim())});
-$("refreshAll")?.addEventListener("click",refreshAll);
-$("logoutAdmin")?.addEventListener("click",async()=>{
-  await api("/api/admin/logout",{method:"POST"}).catch(()=>{});
-  location.reload();
-});
-restoreSession();
+async function refresh(){await Promise.all([stats(),users($("search").value.trim()),alerts()]);}
+async function enter(){try{const d=await api('/api/admin/me');if(d.authenticated){$("login").classList.add('hidden');$("app").classList.remove('hidden');$("adminName").textContent='Connecté : '+(d.user?.username||'admin');await refresh();return;}}catch{} online(false);}
+$("loginBtn").onclick=async()=>{try{const d=await api('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$("username").value.trim(),password:$("password").value})});$("loginError").textContent='';$("login").classList.add('hidden');$("app").classList.remove('hidden');$("adminName").textContent='Connecté : '+(d.user?.username||'admin');await refresh();}catch(e){$("loginError").textContent='⚠️ '+e.message;}};
+$("password").onkeydown=e=>{if(e.key==='Enter')$("loginBtn").click()};$("searchBtn").onclick=()=>users($("search").value.trim());$("search").onkeydown=e=>{if(e.key==='Enter')$("searchBtn").click()};$("refresh").onclick=refresh;$("logout").onclick=async()=>{await api('/api/admin/logout',{method:'POST'}).catch(()=>{});location.reload();};
+window.loadUser=loadUser;window.banUser=banUser;window.unbanUser=unbanUser;window.reviewAlert=reviewAlert;enter();

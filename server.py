@@ -299,6 +299,7 @@ init_db()
 BAN_DURATIONS = {
     "10m": timedelta(minutes=10),
     "1h": timedelta(hours=1),
+    "6h": timedelta(hours=6),
     "1d": timedelta(days=1),
     "7d": timedelta(days=7),
     "30d": timedelta(days=30),
@@ -1772,11 +1773,27 @@ def generate_image_route():
 # =========================================================
 
 def admin_authenticated():
-    return bool(
-        session.get(
-            "admin_authenticated"
-        )
-    )
+    if session.get("admin_authenticated"):
+        return True
+
+    # Autorise aussi la session normale si elle appartient à un admin.
+    user_id = session.get("user_id")
+    if not user_id:
+        return False
+
+    conn = get_db()
+    user = conn.execute(
+        "SELECT public_id, is_admin FROM users WHERE public_id = ?",
+        (user_id,)
+    ).fetchone()
+    conn.close()
+
+    if user and int(user["is_admin"] or 0) == 1:
+        session["admin_authenticated"] = True
+        session["admin_user_id"] = user["public_id"]
+        return True
+
+    return False
 
 
 @app.route("/api/admin/me")
@@ -1952,7 +1969,7 @@ def admin_search_users():
               lower(username) LIKE lower(?)
               OR lower(public_id) LIKE lower(?)
           )
-        ORDER BY id DESC
+        ORDER BY u.id DESC
         LIMIT 50
         """,
         (datetime.utcnow().isoformat(), f"%{query}%", f"%{query}%")
