@@ -1,13 +1,6 @@
 import os
 import re
 import sqlite3
-
-try:
-    import psycopg
-    from psycopg.rows import dict_row
-except ImportError:
-    psycopg = None
-    dict_row = None
 import uuid
 from datetime import datetime, timedelta
 
@@ -43,8 +36,6 @@ MODEL = os.getenv(
 )
 
 DB_FILE = "bournox.db"
-# Si DATABASE_URL est défini, Xyro.AI utilise PostgreSQL.
-# Sinon, SQLite reste utilisé pour le développement local.
 
 
 # =========================================================
@@ -101,55 +92,7 @@ au lieu d'inventer une réponse.
 # BASE DE DONNÉES
 # =========================================================
 
-class PostgresCompatConnection:
-    """Adaptateur minimal pour garder le code SQL actuel compatible PostgreSQL."""
-    def __init__(self, url):
-        if psycopg is None:
-            raise RuntimeError(
-                "Le module psycopg est manquant. Ajoute psycopg[binary] à requirements.txt."
-            )
-        self.conn = psycopg.connect(url, row_factory=dict_row)
-
-    @staticmethod
-    def _sql(sql):
-        # Le projet utilisait les placeholders SQLite "?".
-        # PostgreSQL utilise "%s".
-        sql = sql.replace(
-            "INTEGER PRIMARY KEY AUTOINCREMENT",
-            "BIGSERIAL PRIMARY KEY"
-        )
-        return sql.replace("?", "%s")
-
-    def execute(self, sql, params=None):
-        sql = self._sql(sql)
-
-        # Ces PRAGMA sont uniquement SQLite.
-        if sql.strip().upper().startswith("PRAGMA "):
-            return _EmptyCursor()
-
-        return self.conn.execute(sql, params)
-
-    def commit(self):
-        self.conn.commit()
-
-    def close(self):
-        self.conn.close()
-
-
-class _EmptyCursor:
-    def fetchone(self):
-        return None
-
-    def fetchall(self):
-        return []
-
-
 def get_db():
-    database_url = os.getenv("DATABASE_URL", "").strip()
-
-    if database_url:
-        return PostgresCompatConnection(database_url)
-
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
 
