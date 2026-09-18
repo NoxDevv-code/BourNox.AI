@@ -55,7 +55,7 @@ form.addEventListener("submit", async (event) => {
 
     window.location.href = "/";
   } catch (error) {
-    errorBox.textContent = "⚠️ Impossible de contacter BourNox.";
+    errorBox.textContent = "⚠️ Impossible de contacter Xyro.AI.";
   } finally {
     submitBtn.disabled = false;
   }

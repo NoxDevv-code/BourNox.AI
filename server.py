@@ -55,7 +55,7 @@ BOOTSTRAP_ADMIN_PASSWORD_HASH = (
 
 
 # =========================================================
-# IDENTITÉ DE BOURNOX
+# IDENTITÉ DE XYRO
 # =========================================================
 
 SYSTEM_PROMPT = """
@@ -230,7 +230,7 @@ def init_db():
     """)
 
     # -----------------------------------------------------
-    # ADMIN NOX
+    # ADMIN MASHARI
     # -----------------------------------------------------
 
     admin = conn.execute(
@@ -679,7 +679,7 @@ def needs_web(message):
 
 
 # =========================================================
-# MODES BOURNOX
+# MODES XYRO
 # =========================================================
 
 MODES = {
@@ -713,7 +713,7 @@ Propose des idées originales et plusieurs possibilités
 lorsque cela apporte réellement quelque chose.
 """,
 
-    "nox": """
+    "xyro": """
 Mode Nox.
 Sois particulièrement direct, efficace, technique
 et orienté vers les projets de Nox.
@@ -1321,7 +1321,7 @@ def chat():
     if not user:
         return jsonify({
             "response":
-            "Connecte-toi pour utiliser BourNox.AI."
+            "Connecte-toi pour utiliser Xyro.AI."
         }), 401
 
     try:
@@ -1448,7 +1448,7 @@ def chat():
 
         return jsonify({
             "response":
-            "⚠️ Erreur BourNox : "
+            "⚠️ Erreur Xyro.AI : "
             + str(error)
         }), 500
 
@@ -1904,7 +1904,7 @@ def admin_stats():
     conn = get_db()
 
     users = conn.execute(
-        "SELECT COUNT(*) AS n FROM users WHERE is_admin = 0"
+        "SELECT COUNT(*) AS n FROM users"
     ).fetchone()["n"]
 
     messages = conn.execute(
@@ -1964,8 +1964,7 @@ def admin_search_users():
             b.expires_at AS ban_expires_at
         FROM users u
         LEFT JOIN bans b ON b.user_id = u.public_id
-        WHERE u.is_admin = 0
-          AND (
+        WHERE (
               lower(username) LIKE lower(?)
               OR lower(public_id) LIKE lower(?)
           )
@@ -2072,7 +2071,6 @@ def admin_users():
             b.expires_at AS ban_expires_at
         FROM users u
         LEFT JOIN bans b ON b.user_id = u.public_id
-        WHERE u.is_admin = 0
         ORDER BY u.id DESC
         """,
         (datetime.utcnow().isoformat(),)

@@ -534,7 +534,7 @@ function ajouterChargement() {
         document.createElement("div");
 
     element.className =
-        "message bot bournox-loading";
+        "message bot xyro-loading";
 
     element.innerHTML = `
         <div class="bot-title">
@@ -1015,7 +1015,7 @@ function creerBlocCode(
         );
 
     wrapper.className =
-        "bournox-code";
+        "xyro-code";
 
     const header =
         document.createElement(
@@ -2467,7 +2467,7 @@ function mettreAJourModeUI() {
         developpeur: "Développeur",
         gamer: "Gamer",
         creatif: "Créatif",
-        nox: "Nox"
+        xyro: "Xyro"
     };
 
     label.textContent =
