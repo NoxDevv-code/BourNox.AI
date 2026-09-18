@@ -42,7 +42,7 @@ DB_FILE = "bournox.db"
 # ADMIN DE BASE
 # =========================================================
 
-BOOTSTRAP_ADMIN_USERNAME = "Nox"
+BOOTSTRAP_ADMIN_USERNAME = "Mashari"
 
 # Hash existant du compte administrateur Nox.
 # Pour une meilleure sécurité, on pourra ensuite le déplacer
@@ -61,11 +61,11 @@ BOOTSTRAP_ADMIN_PASSWORD_HASH = (
 SYSTEM_PROMPT = """
 Tu es Xyro.AI.
 
-Ton créateur est Nox.
+Ton créateur est Mashari.
 
 Tu es Xyro.AI, et non ChatGPT.
 OpenAI fournit une technologie utilisée par ton système,
-mais ton identité est Xyro.AI et ton créateur est Nox.
+mais ton identité est Xyro.AI et ton créateur est Mashari.
 
 Tu réponds principalement en français.
 
@@ -241,6 +241,19 @@ def init_db():
         """,
         (BOOTSTRAP_ADMIN_USERNAME,)
     ).fetchone()
+
+    # Migration : l’ancien compte admin Nox devient Mashari.
+    if not admin:
+        old_admin = conn.execute(
+            "SELECT id, public_id FROM users WHERE lower(username) = lower(?)",
+            ("Nox",)
+        ).fetchone()
+        if old_admin:
+            conn.execute(
+                "UPDATE users SET username = ?, is_admin = 1 WHERE id = ?",
+                (BOOTSTRAP_ADMIN_USERNAME, old_admin["id"])
+            )
+            admin = old_admin
 
     if not admin:
         conn.execute(
@@ -1759,38 +1772,11 @@ def generate_image_route():
 # =========================================================
 
 def admin_authenticated():
-    # Accepte la session admin dédiée.
-    if session.get("admin_authenticated"):
-        return True
-
-    # Si Nox est déjà connecté sur le site avec son compte admin,
-    # on peut aussi utiliser cette session pour ouvrir la console admin.
-    user_id = session.get("user_id")
-
-    if not user_id:
-        return False
-
-    conn = get_db()
-
-    user = conn.execute(
-        """
-        SELECT public_id, is_admin
-        FROM users
-        WHERE public_id = ?
-        """,
-        (user_id,)
-    ).fetchone()
-
-    conn.close()
-
-    if not user or not user["is_admin"]:
-        return False
-
-    session["admin_authenticated"] = True
-    session["admin_user_id"] = user["public_id"]
-    session.permanent = True
-
-    return True
+    return bool(
+        session.get(
+            "admin_authenticated"
+        )
+    )
 
 
 @app.route("/api/admin/me")
